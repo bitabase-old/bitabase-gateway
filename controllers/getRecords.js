@@ -6,8 +6,13 @@ const sendJsonResponse = require('../modules/sendJsonResponse')
 
 const { ErrorObject } = require('../modules/error')
 
-function createCollection (server, databaseName, collectionName, callback) {
-  callback(null, true)
+function createCollection (server, databaseName, collectionSchema, collectionName, callback) {
+  const parsedBody = JSON.parse(collectionSchema)
+  callarest({
+    method: 'post',
+    url: `${server}/v1/databases/${databaseName}/collections`,
+    data: parsedBody.schema
+  }, callback)
 }
 
 function getCollectionSchema (databaseName, collectionName, callback) {
@@ -16,7 +21,25 @@ function getCollectionSchema (databaseName, collectionName, callback) {
     headers: {
       'X-Internal-Secret': config.secret
     }
-  }, callback)
+  }, function (error, result) {
+    if (error) {
+      return callback(error)
+    }
+
+    if (result.response.statusCode === 200) {
+      return callback(null, result.body)
+    }
+
+    if (result.response.statusCode === 404) {
+      return callback({
+        status: 404,
+        message: `the collection "${databaseName}/${collectionName}" does not exist`,
+        ...result
+      })
+    }
+
+    callback(result)
+  })
 }
 
 function getRecords (server, databaseName, collectionName, callback) {
@@ -36,7 +59,7 @@ function getRecords (server, databaseName, collectionName, callback) {
     if (records.response.statusCode === 404) {
       const collectionSchema = righto(getCollectionSchema, databaseName, collectionName)
       const serverCollection = righto(createCollection, server, databaseName, collectionSchema, collectionName)
-      const records = righto(callarest, restOpts)
+      const records = righto(callarest, restOpts, righto.after(serverCollection))
       records(callback)
     }
   })
@@ -47,14 +70,14 @@ function performGet (request, response, databaseName, collectionName) {
 
   records(function (error, records) {
     if (error) {
-      return sendJsonResponse(500, 'unhandled error', response)
+      return sendJsonResponse(error.status, {error: error.message}, response)
     }
 
     if (records.response.statusCode === 404) {
       return sendJsonResponse(404, {error: `the collection "${databaseName}/${collectionName}" does not exist`}, response)
     }
 
-    sendJsonResponse(200, records.body, response)
+    sendJsonResponse(200, JSON.parse(records.body), response)
   })
 }
 
