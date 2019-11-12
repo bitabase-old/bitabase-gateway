@@ -19,27 +19,57 @@ function getCollectionSchema (databaseName, collectionName, callback) {
   }, callback)
 }
 
-function getRecords (server, databaseName, collectionName, callback) {
-  const restOpts = {
-    url: `${server}/v1/databases/${databaseName}/collections/${collectionName}/records`
+function transformCallarestResult(result, callback){
+  if (result.statusCode === 200){
+    return callback(null, result.body)
   }
 
-  callarest(restOpts, function (error, records) {
-    if (error) {
+  callback({
+    ...result.response.body,
+    statusCode: result.response.statusCode
+  })
+}
+
+function getRestOptions(server, databaseName, collectionName){
+  return {
+    url: `${server}/v1/databases/${databaseName}/collections/${collectionName}/records`
+  }
+}
+
+function getRecordsFromServer(server, databaseName, collectionName, callback){
+  const restOptions = getRestOptions(server, databaseName, collectionName)
+
+  const recordResponse = righto(callarest, restOptions)
+  const peerRecords = righto(transformCallarestResult, recordResponse)
+  const result = righto.handle(peerRecords, (error, callback) => {
+    if (error.statusCode === 404) {
+      return callback({statusCode: 404, body: { error: `the collection "${databaseName}/${collectionName}" does not exist`}})
+    }
+
+    callback(error)
+  })
+
+  result(callback)
+}
+
+function checkOnServer(server, databaseName, collectionName, callback){
+  const collectionSchema = righto(getCollectionSchema, databaseName, collectionName)
+  const serverCollection = righto(createCollection, server, databaseName, collectionSchema, collectionName)
+  const records = righto(getRecordsFromServer, server, databaseName, collectionName, righto.after(serverCollection))
+  records(callback)
+}
+
+function getRecords (server, databaseName, collectionName, callback) {
+  const peerRecords = righto(getRecordsFromServer, server, databaseName, collectionName)
+  const records = righto.handle(peerRecords, (error, callback) => {
+    if(error.statusCode !== 404){
       return callback(error)
     }
 
-    if (records.response.statusCode === 200) {
-      return callback(null, records)
-    }
-
-    if (records.response.statusCode === 404) {
-      const collectionSchema = righto(getCollectionSchema, databaseName, collectionName)
-      const serverCollection = righto(createCollection, server, databaseName, collectionSchema, collectionName)
-      const records = righto(callarest, restOpts)
-      records(callback)
-    }
+    checkOnServer(server, databaseName, collectionName, callback)
   })
+
+  records(callback)
 }
 
 function performGet (request, response, databaseName, collectionName) {
@@ -47,11 +77,8 @@ function performGet (request, response, databaseName, collectionName) {
 
   records(function (error, records) {
     if (error) {
-      return sendJsonResponse(500, 'unhandled error', response)
-    }
-
-    if (records.response.statusCode === 404) {
-      return sendJsonResponse(404, {error: `the collection "${databaseName}/${collectionName}" does not exist`}, response)
+      const errorBody = error.statusCode && error.statusCode < 500 && error.body || 'unhandled error'
+      return sendJsonResponse(error.statusCode || 500, errorBody, response)
     }
 
     sendJsonResponse(200, records.body, response)
