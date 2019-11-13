@@ -1,6 +1,6 @@
 const test = require('tape')
 
-const {bringUp, bringDown} = require('../helpers/reset')
+const {bringUp, bringDown} = require('../helpers/environment')
 const httpRequest = require('../helpers/httpRequest')
 const { createUserAndSession } = require('../helpers/session')
 
@@ -58,12 +58,10 @@ test('missing collection -> proxy to an existing collection', async t => {
   t.equal(response.status, 200)
 
   t.deepEqual(response.data, {
-    pagination: {
-      recordsPerPage: 10,
-      totalRecords: 0,
-    },
-    data: []
+    count: 0,
+    items: []
   })
 
   await server.stop()
+  await bringDown()
 })

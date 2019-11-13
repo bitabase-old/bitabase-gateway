@@ -6,8 +6,13 @@ const sendJsonResponse = require('../modules/sendJsonResponse')
 
 const { ErrorObject } = require('../modules/error')
 
-function createCollection (server, databaseName, collectionName, callback) {
-  callback(null, true)
+function createCollection (server, databaseName, collectionSchema, collectionName, callback) {
+  const parsedBody = collectionSchema.body
+  callarest({
+    method: 'post',
+    url: `${server}/v1/databases/${databaseName}/collections`,
+    data: parsedBody.schema
+  }, callback)
 }
 
 function getCollectionSchema (databaseName, collectionName, callback) {
@@ -53,7 +58,8 @@ function getRecordsFromServer(server, databaseName, collectionName, callback){
 }
 
 function checkOnServer(server, databaseName, collectionName, callback){
-  const collectionSchema = righto(getCollectionSchema, databaseName, collectionName)
+  const collectionSchemaResponse = righto(getCollectionSchema, databaseName, collectionName)
+  const collectionSchema = righto(transformCallarestResult, collectionSchemaResponse)
   const serverCollection = righto(createCollection, server, databaseName, collectionSchema, collectionName)
   const records = righto(getRecordsFromServer, server, databaseName, collectionName, righto.after(serverCollection))
   records(callback)
@@ -68,7 +74,6 @@ function getRecords (server, databaseName, collectionName, callback) {
 
     checkOnServer(server, databaseName, collectionName, callback)
   })
-
   records(callback)
 }
 
@@ -76,6 +81,8 @@ function performGet (request, response, databaseName, collectionName) {
   const records = righto(getRecords, config.servers[0], databaseName, collectionName)
 
   records(function (error, records) {
+    console.log('------------------ fin ---------------')
+    console.log(error)
     if (error) {
       const errorBody = error.statusCode && error.statusCode < 500 && error.body || 'unhandled error'
       return sendJsonResponse(error.statusCode || 500, errorBody, response)
