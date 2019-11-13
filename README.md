@@ -1,4 +1,5 @@
 # bitabase - Gateway
+[![Build Status](https://travis-ci.org/bitabase/bitabase-gateway.svg?branch=master)](https://travis-ci.org/bitabase/bitabase-gateway)
 [![David DM](https://david-dm.org/bitabase/bitabase-gateway.svg)](https://david-dm.org/bitabase/bitabase-gateway)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/bitabase/bitabase-gateway)
 [![GitHub package.json version](https://img.shields.io/github/package-json/v/bitabase/bitabase-gateway)](https://github.com/bitabase/bitabase-gateway/blob/master/package.json)
