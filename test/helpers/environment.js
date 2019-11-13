@@ -6,8 +6,8 @@ const righto = require('righto')
 
 const config = require('../../config')
 
-let managerServer = require('../../../bitabase-manager/server')
-let dataServer = require('../../../bitabase-server/server')
+let managerServer = require('../../shared/bitabase-manager/server')
+let dataServer = require('../../shared/bitabase-server/server')
 
 const rmdir = promisify(fs.rmdir)
 

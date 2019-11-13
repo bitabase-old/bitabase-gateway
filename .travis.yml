@@ -1,0 +1,10 @@
+language: node_js
+sudo: false
+node_js:
+  - 12
+install:
+  - git clone https://github.com/bitabase/bitabase-manager.git shared/bitabase-manager
+  - git clone https://github.com/bitabase/bitabase-server.git shared/bitabase-server
+  - npm install
+script:
+  - npm run test

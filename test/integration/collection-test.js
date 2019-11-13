@@ -1,6 +1,6 @@
 const test = require('tape')
 
-const {bringUp, bringDown} = require('../helpers/reset')
+const {bringUp, bringDown} = require('../helpers/environment')
 const httpRequest = require('../helpers/httpRequest')
 const { createUserAndSession } = require('../helpers/session')
 
