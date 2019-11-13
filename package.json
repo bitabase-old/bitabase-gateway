@@ -11,7 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.19.0",
-    "callarest": "^1.0.0",
+    "callarest": "^1.0.2",
     "finalhandler": "^1.1.2",
     "find-my-way": "^2.2.1",
     "generic-errors": "^2.1.0",
@@ -19,13 +19,13 @@
     "mathjs": "^6.2.3",
     "mkdirp": "^0.5.1",
     "node-mini-migrations": "^2.0.1",
-    "pbkdf2-wrapper": "^1.1.1",
+    "pbkdf2-wrapper": "^1.2.1",
     "righto": "^6.0.1",
     "sqlite": "^3.0.3",
     "uuid": "^3.3.3"
   },
   "devDependencies": {
-    "promises-debugger": "^1.0.1",
+    "promises-debugger": "^1.0.3",
     "tape": "^4.11.0"
   }
 }
