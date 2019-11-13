@@ -5,6 +5,8 @@ node_js:
 install:
   - git clone https://github.com/bitabase/bitabase-manager.git shared/bitabase-manager
   - git clone https://github.com/bitabase/bitabase-server.git shared/bitabase-server
+  - cd shared/bitabase-manager && npm i && cd ../../
+  - cd shared/bitabase-server && npm i && cd ../../
   - npm install
 script:
   - npm run test
