@@ -8,6 +8,11 @@ This is a very early attempt at the gateway server.
 
 ## Endpoints
 
+All requests are proxied through to the database servers based on the
+database stored in the hostname:
+
+https://:databaseName.bitabase.com
+
 <table>
   <tr>
     <th></th>
