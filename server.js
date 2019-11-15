@@ -38,7 +38,7 @@ async function start () {
     }
 
     sendJsonResponse(404, {error: 'not found'}, response)
-  }).listen(config.port)
+  }).listen(config.port, '0.0.0.0')
 
   console.log(`Listening on port ${config.port}`)
 }
