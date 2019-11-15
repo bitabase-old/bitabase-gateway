@@ -1,6 +1,5 @@
 const http = require('http')
 const path = require('path')
-const axios = require('axios')
 
 const config = require('./config')
 
