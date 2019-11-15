@@ -13,7 +13,7 @@ const config = {
     port: 80,
     secret: process.env.BB_INTERNAL_SECRET,
     managerUrl: 'https://api.bitabase.com',
-    accountMapper: '*.bitabase.com',
+    accountMapper: '(.*).bitabase.net',
     servers: (process.env.BB_INTERNAL_SERVERS || '').split(',').map(s => s.trim())
   }
 }
