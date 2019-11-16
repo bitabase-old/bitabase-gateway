@@ -22,6 +22,7 @@ function getCollectionSchema (databaseName, collectionName, callback) {
       'X-Internal-Secret': config.secret
     }
   }, function (error, result) {
+    console.log(result)
     if (error) {
       return callback(error)
     }
