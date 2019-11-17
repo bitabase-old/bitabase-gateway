@@ -1,4 +1,3 @@
-const righto = require('righto')
 const callarest = require('callarest')
 
 const sendJsonResponse = require('../modules/sendJsonResponse')
@@ -36,25 +35,31 @@ const getRecordsFromServer = (server, collectionDefinition, databaseName, collec
     }
 
     callback(records)
-
   })
 }
 
 function sendFinalResponseToServer (allErrors, allRecords, response) {
   if (allErrors.length > 0) {
-    console.log({allErrors})
+    console.log({ allErrors })
     return sendJsonResponse(500, 'Unexpected Server Error', response)
   }
 
-  console.log(allRecords)
+  const accumulatedRecords = allRecords.reduce((acc, record) => {
+    acc.count = acc.count + record.count
+    acc.items = acc.items.concat(record.items)
+    return acc
+  }, {
+    count: 0,
+    items: []
+  })
 
-  return sendJsonResponse(200, allRecords[0], response)
+  return sendJsonResponse(200, accumulatedRecords, response)
 }
 
 const performGet = config => function (request, response, databaseName, collectionName) {
   getCollectionDefinition(databaseName, collectionName, function (error, collectionDefinition) {
     if (error) {
-      return sendJsonResponse(error.status, {error: error.message}, response)
+      return sendJsonResponse(error.status, { error: error.message }, response)
     }
 
     const allErrors = []
@@ -76,9 +81,9 @@ const performGet = config => function (request, response, databaseName, collecti
       }
     }
 
-    config.servers.forEach(server => 
+    config.servers.forEach(server =>
       getRecordsFromServer(server, collectionDefinition, databaseName, collectionName, handleRecordsFromServer)
-    )    
+    )
   })
 }
 

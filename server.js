@@ -1,5 +1,4 @@
 const http = require('http')
-const path = require('path')
 
 const defaultConfig = require('./config')
 
@@ -42,12 +41,12 @@ function createServer (configOverrides) {
         return getRecords(request, response, databaseName, collectionName)
       }
 
-      sendJsonResponse(404, {error: 'not found'}, response)
+      sendJsonResponse(404, { error: 'not found' }, response)
     }).listen(config.port)
 
     console.log(`Listening on port ${config.port}`)
 
-    return { start, stop}
+    return { start, stop }
   }
 
   function stop () {

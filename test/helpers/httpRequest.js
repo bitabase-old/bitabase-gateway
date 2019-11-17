@@ -1,5 +1,5 @@
 const axios = require('axios')
 
 module.exports = axios.create({
-  validateStatus: status => status < 500,
+  validateStatus: status => status < 500
 })

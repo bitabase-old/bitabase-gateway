@@ -1,5 +1,6 @@
 const callarest = require('callarest')
 const config = require('../config')
+const ErrorObject = require('../modules/error')
 
 function getCollectionSchema (databaseName, collectionName, callback) {
   callarest({
@@ -17,11 +18,11 @@ function getCollectionSchema (databaseName, collectionName, callback) {
     }
 
     if (result.response.statusCode === 404) {
-      return callback({
+      return callback(new ErrorObject({
         status: 404,
         message: `the collection "${databaseName}/${collectionName}" does not exist`,
         ...result
-      })
+      }))
     }
 
     callback(result)
