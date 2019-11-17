@@ -5,6 +5,6 @@
 //   removeInternalModules: true
 // })
 
-require('./common/getCollectionNameFromPath-test.js')
-require('./common/getDatabaseNameFromDomain-test.js')
-require('./integration/collection-test')
+require('./common/getCollectionNameFromPath-test.js');
+require('./common/getDatabaseNameFromDomain-test.js');
+require('./integration/collection-test');

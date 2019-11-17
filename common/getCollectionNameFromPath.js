@@ -1,13 +1,13 @@
 function getCollectionNameFromPath (url) {
-  const collectionName = url.split('/')[1]
+  const collectionName = url.split('/')[1];
 
   if (!collectionName) {
-    return null
+    return null;
   }
 
-  const invalidCollectionName = collectionName.match(/[^a-z0-9]/gi, '')
+  const invalidCollectionName = collectionName.match(/[^a-z0-9]/gi, '');
 
-  return !invalidCollectionName ? collectionName : null
+  return !invalidCollectionName ? collectionName : null;
 }
 
-module.exports = getCollectionNameFromPath
+module.exports = getCollectionNameFromPath;

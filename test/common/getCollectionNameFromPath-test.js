@@ -1,27 +1,27 @@
-const test = require('tape')
+const test = require('tape');
 
-const getCollectionNameFromPath = require('../../common/getCollectionNameFromPath')
+const getCollectionNameFromPath = require('../../common/getCollectionNameFromPath');
 
 test('getCollectionNameFromPath: has collection', t => {
-  t.plan(1)
+  t.plan(1);
 
-  const result = getCollectionNameFromPath('/someCollection')
+  const result = getCollectionNameFromPath('/someCollection');
 
-  t.equal(result, 'someCollection')
-})
+  t.equal(result, 'someCollection');
+});
 
 test('getCollectionNameFromPath: has collection trailing slash', t => {
-  t.plan(1)
+  t.plan(1);
 
-  const result = getCollectionNameFromPath('/someCollection/')
+  const result = getCollectionNameFromPath('/someCollection/');
 
-  t.equal(result, 'someCollection')
-})
+  t.equal(result, 'someCollection');
+});
 
 test('getCollectionNameFromPath: has collection extra text', t => {
-  t.plan(1)
+  t.plan(1);
 
-  const result = getCollectionNameFromPath('/someCollection/extra')
+  const result = getCollectionNameFromPath('/someCollection/extra');
 
-  t.equal(result, 'someCollection')
-})
+  t.equal(result, 'someCollection');
+});

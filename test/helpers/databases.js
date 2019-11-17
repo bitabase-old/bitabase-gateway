@@ -1,5 +1,5 @@
-const httpRequest = require('./httpRequest')
-const config = require('../../config')
+const httpRequest = require('./httpRequest');
+const config = require('../../config');
 
 const createDatabase = async (headers, data) => {
   const request = await httpRequest('/v1/databases', {
@@ -9,9 +9,9 @@ const createDatabase = async (headers, data) => {
     data: data || {
       name: 'testdb'
     }
-  })
-  return request.data
-}
+  });
+  return request.data;
+};
 
 const createCollection = async (headers, database, data) => {
   const request = await httpRequest(`/v1/databases/${database.name}/collections`, {
@@ -26,9 +26,9 @@ const createCollection = async (headers, database, data) => {
         email: ['required', 'string']
       }
     }
-  })
-  return request.data
-}
+  });
+  return request.data;
+};
 
 const createRecord = async ({ headers, database, server, collection, data }) => {
   const request = await httpRequest(`/v1/databases/${database.name}/collections/${collection.name}/records`, {
@@ -43,12 +43,12 @@ const createRecord = async ({ headers, database, server, collection, data }) => 
         email: 'joe.bloggs@example.com'
       }
     }
-  })
-  return request.data
-}
+  });
+  return request.data;
+};
 
 module.exports = {
   createDatabase,
   createCollection,
   createRecord
-}
+};

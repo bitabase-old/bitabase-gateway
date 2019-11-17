@@ -1,45 +1,45 @@
-const fs = require('fs')
-const { promisify } = require('util')
-const path = require('path')
+const fs = require('fs');
+const { promisify } = require('util');
+const path = require('path');
 
-const managerServer = require('../../shared/bitabase-manager/server')
-const createDataServer = require('../../shared/bitabase-server/server')
+const managerServer = require('../../shared/bitabase-manager/server');
+const createDataServer = require('../../shared/bitabase-server/server');
 
-const rmdir = promisify(fs.rmdir)
+const rmdir = promisify(fs.rmdir);
 
-let dataServers = []
+let dataServers = [];
 async function bringUp (dataServerCount = 1) {
-  await managerServer.stop()
-  await rmdir(path.resolve('./shared/bitabase-manager/data'), { recursive: true })
-  await managerServer.start()
+  await managerServer.stop();
+  await rmdir(path.resolve('./shared/bitabase-manager/data'), { recursive: true });
+  await managerServer.start();
 
   for (let server = 0; server < dataServers.length; server++) {
-    await dataServers[server].stop()
+    await dataServers[server].stop();
   }
 
-  await rmdir(path.resolve('/tmp/data'), { recursive: true })
+  await rmdir(path.resolve('/tmp/data'), { recursive: true });
 
   for (let server = 0; server < dataServerCount; server++) {
     const currentServer = createDataServer({
       port: 8000 + server,
       databasePath: '/tmp/data/' + server
-    })
-    await currentServer.start()
-    dataServers.push(currentServer)
+    });
+    await currentServer.start();
+    dataServers.push(currentServer);
   }
 }
 
 async function bringDown () {
-  await managerServer.stop()
+  await managerServer.stop();
 
   for (let server = 0; server < dataServers.length; server++) {
-    await dataServers[server].stop()
+    await dataServers[server].stop();
   }
 
-  dataServers = []
+  dataServers = [];
 }
 
 module.exports = {
   bringUp,
   bringDown
-}
+};

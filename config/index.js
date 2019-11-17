@@ -16,6 +16,6 @@ const config = {
     accountMapper: '(.*).bitabase.net',
     servers: (process.env.BB_INTERNAL_SERVERS || '').split(',').map(s => s.trim())
   }
-}
+};
 
-module.exports = config[process.env.NODE_ENV || 'dev']
+module.exports = config[process.env.NODE_ENV || 'dev'];

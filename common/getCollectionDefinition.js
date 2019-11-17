@@ -1,6 +1,6 @@
-const callarest = require('callarest')
-const config = require('../config')
-const ErrorObject = require('../modules/error')
+const callarest = require('callarest');
+const config = require('../config');
+const ErrorObject = require('../modules/error');
 
 function getCollectionSchema (databaseName, collectionName, callback) {
   callarest({
@@ -10,11 +10,11 @@ function getCollectionSchema (databaseName, collectionName, callback) {
     }
   }, function (error, result) {
     if (error) {
-      return callback(error)
+      return callback(error);
     }
 
     if (result.response.statusCode === 200) {
-      return callback(null, JSON.parse(result.body))
+      return callback(null, JSON.parse(result.body));
     }
 
     if (result.response.statusCode === 404) {
@@ -22,11 +22,11 @@ function getCollectionSchema (databaseName, collectionName, callback) {
         status: 404,
         message: `the collection "${databaseName}/${collectionName}" does not exist`,
         ...result
-      }))
+      }));
     }
 
-    callback(result)
-  })
+    callback(result);
+  });
 }
 
-module.exports = getCollectionSchema
+module.exports = getCollectionSchema;

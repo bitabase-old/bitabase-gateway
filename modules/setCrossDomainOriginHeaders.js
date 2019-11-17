@@ -1,5 +1,5 @@
 const setCrossDomainOriginHeaders = (request, response) => {
-  response.setHeader('Access-Control-Allow-Origin', request.headers.origin || '*')
+  response.setHeader('Access-Control-Allow-Origin', request.headers.origin || '*');
   response.setHeader('Access-Control-Allow-Headers', [
     'Origin',
     'X-Requested-With',
@@ -7,7 +7,7 @@ const setCrossDomainOriginHeaders = (request, response) => {
     'Accept',
     'X-Session-Id',
     'X-Session-Secret'
-  ].join(', '))
-}
+  ].join(', '));
+};
 
-module.exports = setCrossDomainOriginHeaders
+module.exports = setCrossDomainOriginHeaders;
