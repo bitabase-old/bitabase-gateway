@@ -133,7 +133,7 @@ test('missing collection -> two database servers -> proxy to an existing collect
 })
 
 test('missing collection -> two database servers -> proxy to an existing collection with 1 record', async t => {
-  t.plan(7)
+  t.plan(9)
 
   await bringUp(2)
   const server = await createServer({
@@ -164,11 +164,29 @@ test('missing collection -> two database servers -> proxy to an existing collect
     }
   })
 
-  await createRecord(session.asHeaders, database, collection, {
-    firstName: 'Joe',
-    lastName: 'Bloggs',
-    email: 'joe.bloggs@example.com'
-  })
+  const promises = []
+  const servers = [
+    'http://localhost:8000',
+    'http://localhost:8001'
+  ]
+
+  for (let i = 0; i < 10; i++) {
+    promises.push(
+      createRecord({
+        headers: session.asHeaders,
+        database: database,
+        collection: collection,
+        server: servers[i % 2],
+        data: {
+          firstName: `Joe${i}`,
+          lastName: `Bloggs${i}`,
+          email: `joe.bloggs${i}@example.com`
+        }
+      })
+    )
+  }
+
+  await Promise.all(promises)
 
   const response = await httpRequest('/foundcl', {
     baseURL: 'http://localhost:8082',
@@ -177,14 +195,18 @@ test('missing collection -> two database servers -> proxy to an existing collect
     }
   })
 
-  t.equal(response.status, 200)
+  t.equal(response.status, 200, 'correct status code 200 returned')
 
-  t.equal(response.data.count, 1)
-  t.equal(response.data.items.length, 1)
-  t.ok(response.data.items[0].id)
-  t.equal(response.data.items[0].firstName, 'Joe')
-  t.equal(response.data.items[0].lastName, 'Bloggs')
-  t.equal(response.data.items[0].email, 'joe.bloggs@example.com')
+  t.equal(response.data.count, 10, 'correct count returned')
+  t.equal(response.data.items.length, 10, 'correct items returned')
+
+  t.ok(response.data.items[0].id, 'first item has id field')
+  t.ok(response.data.items[0].firstName, 'first item has firstName field')
+  t.ok(response.data.items[0].lastName, 'first item has lastName field')
+  t.ok(response.data.items[0].email, 'first item has email field')
+
+  t.ok(response.data.items.find(item => item.firstName === 'Joe1'), 'a record with firstName Joe1 exists')
+  t.ok(response.data.items.find(item => item.lastName === 'Bloggs9'), 'a record with lastName Bloggs9 exists')
 
   await server.stop()
   await bringDown()
