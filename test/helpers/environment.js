@@ -14,7 +14,7 @@ const rmdir = promisify(fs.rmdir)
 let dataServers = []
 async function bringUp (dataServerCount=1) {
   await managerServer.stop()
-  await rmdir(path.resolve('../bitabase-manager/data'), {recursive: true})
+  await rmdir(path.resolve('./shared/bitabase-manager/data'), {recursive: true})
   await managerServer.start()
 
   for (let server = 0; server < dataServers.length; server++) {
