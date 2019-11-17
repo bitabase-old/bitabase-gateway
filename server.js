@@ -1,53 +1,63 @@
 const http = require('http')
 const path = require('path')
 
-const config = require('./config')
+const defaultConfig = require('./config')
 
 const sendJsonResponse = require('./modules/sendJsonResponse')
 const setCrossDomainOriginHeaders = require('./modules/setCrossDomainOriginHeaders')
 const getDatabaseNameFromDomain = require('./common/getDatabaseNameFromDomain')
 const getCollectionNameFromPath = require('./common/getCollectionNameFromPath')
 
-const getRecords = require('./controllers/getRecords.js')
+function createServer (configOverrides) {
+  const config = {
+    ...defaultConfig,
+    ...configOverrides
+  }
 
-let server
+  const getRecords = require('./controllers/getRecords.js')(config)
 
-async function start () {
-  server = http.createServer((request, response) => {
-    setCrossDomainOriginHeaders(request, response)
+  let server
+  async function start () {
+    server = http.createServer((request, response) => {
+      setCrossDomainOriginHeaders(request, response)
 
-    const databaseName = getDatabaseNameFromDomain(
-      config.accountMapper, request.headers.host
-    )
+      const databaseName = getDatabaseNameFromDomain(
+        config.accountMapper, request.headers.host
+      )
 
-    if (!databaseName) {
-      return sendJsonResponse(404, {
-        error: `database name "${databaseName}" not found`
-      }, response)
-    }
+      if (!databaseName) {
+        return sendJsonResponse(404, {
+          error: `database name "${databaseName}" not found`
+        }, response)
+      }
 
-    const collectionName = getCollectionNameFromPath(request.url)
-    if (!collectionName) {
-      return sendJsonResponse(404, {
-        error: `the collection "${databaseName}/${collectionName}" does not exist`
-      }, response)
-    }
+      const collectionName = getCollectionNameFromPath(request.url)
+      if (!collectionName) {
+        return sendJsonResponse(404, {
+          error: `the collection "${databaseName}/${collectionName}" does not exist`
+        }, response)
+      }
 
-    if (request.method === 'GET') {
-      return getRecords(request, response, databaseName, collectionName)
-    }
+      if (request.method === 'GET') {
+        return getRecords(request, response, databaseName, collectionName)
+      }
 
-    sendJsonResponse(404, {error: 'not found'}, response)
-  }).listen(config.port, '0.0.0.0')
+      sendJsonResponse(404, {error: 'not found'}, response)
+    }).listen(config.port)
 
-  console.log(`Listening on port ${config.port}`)
+    console.log(`Listening on port ${config.port}`)
+
+    return { start, stop}
+  }
+
+  function stop () {
+    server && server.close()
+  }
+
+  return {
+    start,
+    stop
+  }
 }
 
-function stop () {
-  server && server.close()
-}
-
-module.exports = {
-  start,
-  stop
-}
+module.exports = createServer

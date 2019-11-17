@@ -7,23 +7,38 @@ const righto = require('righto')
 const config = require('../../config')
 
 let managerServer = require('../../shared/bitabase-manager/server')
-let dataServer = require('../../shared/bitabase-server/server')
+let createDataServer = require('../../shared/bitabase-server/server')
 
 const rmdir = promisify(fs.rmdir)
 
-async function bringUp () {
+let dataServers = []
+async function bringUp (dataServerCount=1) {
   await managerServer.stop()
   await rmdir(path.resolve('../bitabase-manager/data'), {recursive: true})
   await managerServer.start()
 
-  await dataServer.stop()
-  await rmdir(path.resolve('../bitabase-server/data'), {recursive: true})
-  await dataServer.start()
+  for (let server = 0; server < dataServers.length; server++) {
+    await dataServers[server].stop()
+  }
+
+  await rmdir(path.resolve('/tmp/data'), {recursive: true})
+
+  for (let server = 0; server < dataServerCount; server++) {
+    const currentServer = createDataServer({
+      port: 8000 + server,
+      databasePath: '/tmp/data/' + server
+    })
+    await currentServer.start()
+    dataServers.push(currentServer)
+  }
 }
 
 async function bringDown () {
   await managerServer.stop()
-  await dataServer.stop()
+
+  for (let server = 0; server < dataServers.length; server++) {
+    await dataServers[server].stop()
+  }
 }
 
 module.exports =  {

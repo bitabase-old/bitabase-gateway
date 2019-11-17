@@ -1,54 +1,21 @@
-const callarest = require('callarest')
 const righto = require('righto')
+const callarest = require('callarest')
 
-const config = require('../config')
 const sendJsonResponse = require('../modules/sendJsonResponse')
+const getCollectionDefinition = require('../common/getCollectionDefinition')
 
-const { ErrorObject } = require('../modules/error')
-
-function createCollection (server, databaseName, collectionSchema, collectionName, callback) {
-  const parsedBody = JSON.parse(collectionSchema)
+function createCollection (server, databaseName, collectionName, collectionDefinition, callback) {
   callarest({
     method: 'post',
     url: `${server}/v1/databases/${databaseName}/collections`,
-    data: parsedBody.schema
+    data: collectionDefinition.schema
   }, callback)
 }
 
-function getCollectionSchema (databaseName, collectionName, callback) {
+const getRecordsFromServer = (server, collectionDefinition, databaseName, collectionName, callback) => {
   callarest({
-    url: `${config.managerUrl}/v1/databases/${databaseName}/collections/${collectionName}`,
-    headers: {
-      'X-Internal-Secret': config.secret
-    }
-  }, function (error, result) {
-    console.log(result)
-    if (error) {
-      return callback(error)
-    }
-
-    if (result.response.statusCode === 200) {
-      return callback(null, result.body)
-    }
-
-    if (result.response.statusCode === 404) {
-      return callback({
-        status: 404,
-        message: `the collection "${databaseName}/${collectionName}" does not exist`,
-        ...result
-      })
-    }
-
-    callback(result)
-  })
-}
-
-function getRecords (server, databaseName, collectionName, callback) {
-  const restOpts = {
     url: `${server}/v1/databases/${databaseName}/collections/${collectionName}/records`
-  }
-
-  callarest(restOpts, function (error, records) {
+  }, function (error, records) {
     if (error) {
       return callback(error)
     }
@@ -57,28 +24,61 @@ function getRecords (server, databaseName, collectionName, callback) {
       return callback(null, records)
     }
 
-    if (records.response.statusCode === 404) {
-      const collectionSchema = righto(getCollectionSchema, databaseName, collectionName)
-      const serverCollection = righto(createCollection, server, databaseName, collectionSchema, collectionName)
-      const records = righto(callarest, restOpts, righto.after(serverCollection))
-      records(callback)
+    if (records.response.statusCode === 404 && collectionDefinition) {
+      createCollection(server, databaseName, collectionName, collectionDefinition, function (error, result) {
+        if (error) {
+          return callback(error)
+        }
+
+        getRecordsFromServer(server, null, databaseName, collectionName, callback)
+      })
+      return
     }
+
+    callback(records)
+
   })
 }
 
-function performGet (request, response, databaseName, collectionName) {
-  const records = righto(getRecords, config.servers[0], databaseName, collectionName)
+function sendFinalResponseToServer (allErrors, allRecords, response) {
+  if (allErrors.length > 0) {
+    console.log({allErrors})
+    return sendJsonResponse(500, 'Unexpected Server Error', response)
+  }
 
-  records(function (error, records) {
+  console.log(allRecords)
+
+  return sendJsonResponse(200, allRecords[0], response)
+}
+
+const performGet = config => function (request, response, databaseName, collectionName) {
+  getCollectionDefinition(databaseName, collectionName, function (error, collectionDefinition) {
     if (error) {
       return sendJsonResponse(error.status, {error: error.message}, response)
     }
 
-    if (records.response.statusCode === 404) {
-      return sendJsonResponse(404, {error: `the collection "${databaseName}/${collectionName}" does not exist`}, response)
+    const allErrors = []
+    const allRecords = []
+    let serverResponses = 0
+    function handleRecordsFromServer (error, records) {
+      serverResponses = serverResponses + 1
+      if (error) {
+        allErrors.push(error)
+      }
+
+      if (records && records.response.statusCode === 200) {
+        allRecords.push(JSON.parse(records.body))
+      }
+
+      const isDone = serverResponses === config.servers.length
+      if (isDone) {
+        sendFinalResponseToServer(allErrors, allRecords, response)
+      }
     }
 
-    sendJsonResponse(200, JSON.parse(records.body), response)
+    config.servers.forEach(server => 
+      getRecordsFromServer(server, collectionDefinition, databaseName, collectionName, handleRecordsFromServer)
+    )    
   })
 }
 
