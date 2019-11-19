@@ -1,4 +1,5 @@
 const test = require('tape');
+const { promisify } = require('util');
 
 const { bringUp, bringDown } = require('../helpers/environment');
 const httpRequest = require('../helpers/httpRequest');
@@ -25,14 +26,14 @@ test('missing collection -> missing db -> proxy to a none existing collection', 
     }
   });
 
+  await promisify(server.stop)();
+  await bringDown();
+
   t.equal(result.status, 404);
 
   t.deepEqual(result.data, {
     error: 'the collection "notfound/one" does not exist'
   });
-
-  await server.stop();
-  await bringDown();
 });
 
 test('missing collection -> existing db -> proxy to a none existing collection', async t => {
@@ -53,14 +54,14 @@ test('missing collection -> existing db -> proxy to a none existing collection',
     }
   });
 
+  await promisify(server.stop)();
+  await bringDown();
+
   t.equal(result.status, 404);
 
   t.deepEqual(result.data, {
     error: 'the collection "founddb/notfoundcollection" does not exist'
   });
-
-  await server.stop();
-  await bringDown();
 });
 
 test('missing collection -> proxy to an existing collection', async t => {
@@ -84,15 +85,15 @@ test('missing collection -> proxy to an existing collection', async t => {
     }
   });
 
+  await promisify(server.stop)();
+  await bringDown();
+
   t.equal(response.status, 200);
 
   t.deepEqual(response.data, {
     count: 0,
     items: []
   });
-
-  await server.stop();
-  await bringDown();
 });
 
 test('missing collection -> two database servers -> proxy to an existing collection', async t => {
@@ -121,15 +122,15 @@ test('missing collection -> two database servers -> proxy to an existing collect
     }
   });
 
+  await promisify(server.stop)();
+  await bringDown();
+
   t.equal(response.status, 200);
 
   t.deepEqual(response.data, {
     count: 0,
     items: []
   });
-
-  await server.stop();
-  await bringDown();
 });
 
 test('missing collection -> two database servers -> proxy to an existing collection with 1 record', async t => {
@@ -195,6 +196,9 @@ test('missing collection -> two database servers -> proxy to an existing collect
     }
   });
 
+  await promisify(server.stop)();
+  await bringDown();
+
   t.equal(response.status, 200, 'correct status code 200 returned');
 
   t.equal(response.data.count, 10, 'correct count returned');
@@ -207,7 +211,4 @@ test('missing collection -> two database servers -> proxy to an existing collect
 
   t.ok(response.data.items.find(item => item.firstName === 'Joe1'), 'a record with firstName Joe1 exists');
   t.ok(response.data.items.find(item => item.lastName === 'Bloggs9'), 'a record with lastName Bloggs9 exists');
-
-  await server.stop();
-  await bringDown();
 });

@@ -56,7 +56,7 @@ function sendFinalResponseToServer (allErrors, allRecords, response) {
   return sendJsonResponse(200, accumulatedRecords, response);
 }
 
-const performGet = config => function (request, response, databaseName, collectionName) {
+const performGet = config => function (request, response, databaseName, collectionName, usageCollector) {
   getCollectionDefinition(databaseName, collectionName, function (error, collectionDefinition) {
     if (error) {
       return sendJsonResponse(error.status, { error: error.message }, response);
@@ -77,6 +77,10 @@ const performGet = config => function (request, response, databaseName, collecti
 
       const isDone = serverResponses === config.servers.length;
       if (isDone) {
+        if (allErrors.length === 0) {
+          usageCollector.tick(databaseName, collectionName, 'read');
+        }
+
         sendFinalResponseToServer(allErrors, allRecords, response);
       }
     }

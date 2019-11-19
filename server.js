@@ -6,6 +6,7 @@ const sendJsonResponse = require('./modules/sendJsonResponse');
 const setCrossDomainOriginHeaders = require('./modules/setCrossDomainOriginHeaders');
 const getDatabaseNameFromDomain = require('./common/getDatabaseNameFromDomain');
 const getCollectionNameFromPath = require('./common/getCollectionNameFromPath');
+const setupUsageCollector = require('./controllers/setupUsageCollector');
 
 function createServer (configOverrides) {
   const config = {
@@ -14,6 +15,8 @@ function createServer (configOverrides) {
   };
 
   const getRecords = require('./controllers/getRecords.js')(config);
+
+  const usageCollector = setupUsageCollector(config);
 
   let server;
   async function start () {
@@ -38,7 +41,7 @@ function createServer (configOverrides) {
       }
 
       if (request.method === 'GET') {
-        return getRecords(request, response, databaseName, collectionName);
+        return getRecords(request, response, databaseName, collectionName, usageCollector.usageCollector);
       }
 
       sendJsonResponse(404, { error: 'not found' }, response);
@@ -49,7 +52,8 @@ function createServer (configOverrides) {
     return { start, stop };
   }
 
-  function stop () {
+  function stop (callback) {
+    usageCollector.stop(callback);
     server && server.close();
   }
 
