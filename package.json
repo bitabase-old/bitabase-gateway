@@ -11,7 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.19.0",
-    "callarest": "^1.1.0",
+    "callarest": "^1.2.0",
+    "error-with-object": "^1.1.0",
     "finalhandler": "^1.1.2",
     "find-my-way": "^2.2.1",
     "generic-errors": "^2.1.0",
@@ -22,7 +23,8 @@
     "pbkdf2-wrapper": "^1.2.1",
     "righto": "^6.0.1",
     "sqlite": "^3.0.3",
-    "uuid": "^3.3.3"
+    "uuid": "^3.3.3",
+    "write-response": "^1.0.0"
   },
   "devDependencies": {
     "promises-debugger": "^1.0.3",

@@ -14,7 +14,9 @@ function createServer (configOverrides) {
     ...configOverrides
   };
 
+  const getRecord = require('./controllers/getRecord.js')(config);
   const getRecords = require('./controllers/getRecords.js')(config);
+  const postRecords = require('./controllers/postRecords.js')(config);
 
   const usageCollector = setupUsageCollector(config);
 
@@ -40,8 +42,18 @@ function createServer (configOverrides) {
         }, response);
       }
 
-      if (request.method === 'GET') {
+      const recordId = request.url.split('/')[2];
+
+      if (request.method === 'GET' && !recordId) {
         return getRecords(request, response, databaseName, collectionName, usageCollector.usageCollector);
+      }
+
+      if (request.method === 'GET' && recordId) {
+        return getRecord(request, response, databaseName, collectionName, recordId, usageCollector.usageCollector);
+      }
+
+      if (request.method === 'POST') {
+        return postRecords(request, response, databaseName, collectionName, usageCollector.usageCollector);
       }
 
       sendJsonResponse(404, { error: 'not found' }, response);

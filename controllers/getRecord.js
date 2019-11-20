@@ -4,9 +4,9 @@ const sendJsonResponse = require('../modules/sendJsonResponse');
 const getCollectionDefinition = require('../common/getCollectionDefinition');
 const createCollection = require('../common/createCollection');
 
-const getRecordsFromServer = (server, collectionDefinition, databaseName, collectionName, callback) => {
+const getRecordsFromServer = (server, collectionDefinition, databaseName, collectionName, recordId, callback) => {
   callarest({
-    url: `${server}/v1/databases/${databaseName}/collections/${collectionName}/records`
+    url: `${server}/v1/databases/${databaseName}/collections/${collectionName}/records/${recordId}`
   }, function (error, records) {
     if (error) {
       return callback(error);
@@ -17,12 +17,12 @@ const getRecordsFromServer = (server, collectionDefinition, databaseName, collec
     }
 
     if (records.response.statusCode === 404 && collectionDefinition) {
-      createCollection(server, databaseName, collectionName, collectionDefinition, function (error, result) {
+      createCollection(server, databaseName, collectionName, collectionDefinition, recordId, function (error, result) {
         if (error) {
           return callback(error);
         }
 
-        getRecordsFromServer(server, null, databaseName, collectionName, callback);
+        getRecordsFromServer(server, null, databaseName, collectionName, recordId, callback);
       });
       return;
     }
@@ -37,19 +37,10 @@ function sendFinalResponseToServer (allErrors, allRecords, response) {
     return sendJsonResponse(500, 'Unexpected Server Error', response);
   }
 
-  const accumulatedRecords = allRecords.reduce((acc, record) => {
-    acc.count = acc.count + record.count;
-    acc.items = acc.items.concat(record.items);
-    return acc;
-  }, {
-    count: 0,
-    items: []
-  });
-
-  return sendJsonResponse(200, accumulatedRecords, response);
+  return sendJsonResponse(200, allRecords[0], response);
 }
 
-const performGet = config => function (request, response, databaseName, collectionName, usageCollector) {
+const performGet = config => function (request, response, databaseName, collectionName, recordId, usageCollector) {
   getCollectionDefinition(databaseName, collectionName, function (error, collectionDefinition) {
     if (error) {
       return sendJsonResponse(error.status, { error: error.message }, response);
@@ -79,7 +70,7 @@ const performGet = config => function (request, response, databaseName, collecti
     }
 
     config.servers.forEach(server =>
-      getRecordsFromServer(server, collectionDefinition, databaseName, collectionName, handleRecordsFromServer)
+      getRecordsFromServer(server, collectionDefinition, databaseName, collectionName, recordId, handleRecordsFromServer)
     );
   });
 };

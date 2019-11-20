@@ -13,7 +13,7 @@ const {
 
 const createServer = require('../../server');
 
-test('missing collection -> missing db -> proxy to a none existing collection', async t => {
+test('[get] missing collection -> missing db -> proxy to a none existing collection', async t => {
   t.plan(2);
 
   await bringUp();
@@ -36,7 +36,7 @@ test('missing collection -> missing db -> proxy to a none existing collection', 
   });
 });
 
-test('missing collection -> existing db -> proxy to a none existing collection', async t => {
+test('[get] missing collection -> existing db -> proxy to a none existing collection', async t => {
   t.plan(2);
 
   await bringUp();
@@ -64,7 +64,7 @@ test('missing collection -> existing db -> proxy to a none existing collection',
   });
 });
 
-test('missing collection -> proxy to an existing collection', async t => {
+test('[get] missing collection -> proxy to an existing collection', async t => {
   t.plan(2);
 
   await bringUp();
@@ -96,7 +96,7 @@ test('missing collection -> proxy to an existing collection', async t => {
   });
 });
 
-test('missing collection -> two database servers -> proxy to an existing collection', async t => {
+test('[get] missing collection -> two database servers -> proxy to an existing collection', async t => {
   t.plan(2);
 
   await bringUp(2);
@@ -133,7 +133,7 @@ test('missing collection -> two database servers -> proxy to an existing collect
   });
 });
 
-test('missing collection -> two database servers -> proxy to an existing collection with 1 record', async t => {
+test('[get] missing collection -> two database servers -> proxy to an existing collection with 1 record', async t => {
   t.plan(9);
 
   await bringUp(2);

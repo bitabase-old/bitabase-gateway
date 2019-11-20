@@ -14,18 +14,21 @@ const createDatabase = async (headers, data) => {
 };
 
 const createCollection = async (headers, database, data) => {
+  data = {
+    name: 'testdb',
+    schema: {
+      firstName: ['required', 'string'],
+      lastName: ['required', 'string'],
+      email: ['required', 'string']
+    },
+    ...data
+  };
+
   const request = await httpRequest(`/v1/databases/${database.name}/collections`, {
     baseURL: config.managerUrl,
     method: 'post',
     headers,
-    data: data || {
-      name: 'testdb',
-      schema: {
-        firstName: ['required', 'string'],
-        lastName: ['required', 'string'],
-        email: ['required', 'string']
-      }
-    }
+    data
   });
   return request.data;
 };
