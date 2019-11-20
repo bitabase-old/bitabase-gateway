@@ -49,7 +49,7 @@ const performPost = config => function (request, response, databaseName, collect
       return writeResponse(error.status || 500, { error: error.message } || { error: 'Unexpected Server Error' }, response);
     }
 
-    if (result.response.statusCode >= 200 || result.response.statusCode < 300) {
+    if (result.response.statusCode >= 200 && result.response.statusCode < 300) {
       usageCollector.tick(databaseName, collectionName, 'write');
     }
     writeResponse(result.response.statusCode, result.body, response);
