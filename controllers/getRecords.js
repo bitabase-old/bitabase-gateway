@@ -71,8 +71,10 @@ const performGet = config => function (request, response, databaseName, collecti
         try {
           allRecords.push(JSON.parse(records.body));
         } catch (error) {
-          console.log('Error parsing JSON from server')
-          console.log('Body:\n', records.body, '\n\n\n')
+          console.log('Error parsing JSON from server');
+          console.log(error);
+          console.log('Body:\n', records.body, '\n\n\n');
+          return allErrors.push(error);
         }
       }
 
