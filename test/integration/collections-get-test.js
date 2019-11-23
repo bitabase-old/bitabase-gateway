@@ -1,4 +1,5 @@
 const test = require('tape');
+const querystring = require('querystring');
 const { promisify } = require('util');
 
 const { bringUp, bringDown } = require('../helpers/environment');
@@ -211,4 +212,87 @@ test('[get] missing collection -> two database servers -> proxy to an existing c
 
   t.ok(response.data.items.find(item => item.firstName === 'Joe1'), 'a record with firstName Joe1 exists');
   t.ok(response.data.items.find(item => item.lastName === 'Bloggs9'), 'a record with lastName Bloggs9 exists');
+});
+
+test('[get] missing collection -> two database servers -> proxy to an existing collection containing 1 record with a filter', async t => {
+  t.plan(7);
+
+  await bringUp(2);
+  const server = await createServer({
+    servers: [
+      'http://localhost:8000',
+      'http://localhost:8001'
+    ]
+  }).start();
+
+  const session = await createUserAndSession();
+  const database = await createDatabase(session.asHeaders, {
+    name: 'founddb'
+  });
+  const collection = await createCollection(session.asHeaders, database, {
+    name: 'foundcl',
+    schema: {
+      firstName: ['required', 'string'],
+      lastName: ['required', 'string'],
+      email: ['required', 'string']
+    }
+  });
+
+  // Do a GET to create the collections from manager api...
+  await httpRequest('/foundcl', {
+    baseURL: 'http://localhost:8082',
+    headers: {
+      host: 'founddb.bitabase.test'
+    }
+  });
+
+  const promises = [];
+  const servers = [
+    'http://localhost:8000',
+    'http://localhost:8001'
+  ];
+
+  for (let i = 0; i < 10; i++) {
+    promises.push(
+      createRecord({
+        headers: session.asHeaders,
+        database: database,
+        collection: collection,
+        server: servers[i % 2],
+        data: {
+          firstName: `Joe${i}`,
+          lastName: `Bloggs${i}`,
+          email: `joe.bloggs${i}@example.com`
+        }
+      })
+    );
+  }
+
+  await Promise.all(promises);
+
+  const query = querystring.stringify({
+    query: JSON.stringify({
+      firstName: 'Joe4'
+    })
+  });
+
+  const response = await httpRequest(`/foundcl?${query}`, {
+    baseURL: 'http://localhost:8082',
+    headers: {
+      host: 'founddb.bitabase.test'
+    }
+  });
+
+  await promisify(server.stop)();
+  await bringDown();
+
+  t.equal(response.status, 200, 'correct status code 200 returned');
+
+  t.equal(response.data.count, 1, 'correct count returned');
+  t.equal(response.data.items.length, 1, 'correct items returned');
+
+  t.ok(response.data.items[0].id, 'first item has id field');
+  t.equal(response.data.items[0].firstName, 'Joe4', 'first item firstName was Joe4');
+  t.equal(response.data.items[0].lastName, 'Bloggs4', 'first item firstName was Bloggs4');
+  t.equal(response.data.items[0].email, 'joe.bloggs4@example.com', 'first item email was joe.bloggs4@example.com');
 });

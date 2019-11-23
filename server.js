@@ -35,7 +35,9 @@ function createServer (configOverrides) {
         }, response);
       }
 
-      const collectionName = getCollectionNameFromPath(request.url);
+      const parsedUrl = new URL(`https://url.test${request.url}`);
+
+      const collectionName = getCollectionNameFromPath(parsedUrl.pathname);
       if (!collectionName) {
         return sendJsonResponse(404, {
           error: `the collection "${databaseName}/${collectionName}" does not exist`

@@ -4,9 +4,9 @@ const sendJsonResponse = require('../modules/sendJsonResponse');
 const getCollectionDefinition = require('../common/getCollectionDefinition');
 const createCollection = require('../common/createCollection');
 
-const getRecordsFromServer = (server, collectionDefinition, databaseName, collectionName, callback) => {
+const getRecordsFromServer = (server, collectionDefinition, databaseName, collectionName, query, callback) => {
   callarest({
-    url: `${server}/v1/databases/${databaseName}/collections/${collectionName}/records`
+    url: `${server}/v1/databases/${databaseName}/collections/${collectionName}/records${query.trim()}`
   }, function (error, records) {
     if (error) {
       return callback(error);
@@ -22,7 +22,7 @@ const getRecordsFromServer = (server, collectionDefinition, databaseName, collec
           return callback(error);
         }
 
-        getRecordsFromServer(server, null, databaseName, collectionName, callback);
+        getRecordsFromServer(server, null, databaseName, collectionName, query, callback);
       });
       return;
     }
@@ -78,8 +78,10 @@ const performGet = config => function (request, response, databaseName, collecti
       }
     }
 
+    const parsedUrl = new URL(`https://url.test${request.url}`);
+
     config.servers.forEach(server =>
-      getRecordsFromServer(server, collectionDefinition, databaseName, collectionName, handleRecordsFromServer)
+      getRecordsFromServer(server, collectionDefinition, databaseName, collectionName, parsedUrl.search, handleRecordsFromServer)
     );
   });
 };
