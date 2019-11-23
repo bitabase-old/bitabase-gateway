@@ -214,17 +214,7 @@ test('[get] missing collection -> two database servers -> proxy to an existing c
   t.ok(response.data.items.find(item => item.lastName === 'Bloggs9'), 'a record with lastName Bloggs9 exists');
 });
 
-test('[get] missing collection -> two database servers -> proxy to an existing collection containing 1 record with a filter', async t => {
-  t.plan(7);
-
-  await bringUp(2);
-  const server = await createServer({
-    servers: [
-      'http://localhost:8000',
-      'http://localhost:8001'
-    ]
-  }).start();
-
+async function setupNewCollectionWithRecords (recordCount) {
   const session = await createUserAndSession();
   const database = await createDatabase(session.asHeaders, {
     name: 'founddb'
@@ -252,7 +242,7 @@ test('[get] missing collection -> two database servers -> proxy to an existing c
     'http://localhost:8001'
   ];
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < recordCount; i++) {
     promises.push(
       createRecord({
         headers: session.asHeaders,
@@ -268,7 +258,21 @@ test('[get] missing collection -> two database servers -> proxy to an existing c
     );
   }
 
-  await Promise.all(promises);
+  return Promise.all(promises);
+}
+
+test('[get] missing collection -> two database servers -> proxy to an existing collection containing 1 record with a filter', async t => {
+  t.plan(7);
+
+  await bringUp(2);
+  const server = await createServer({
+    servers: [
+      'http://localhost:8000',
+      'http://localhost:8001'
+    ]
+  }).start();
+
+  await setupNewCollectionWithRecords(10);
 
   const query = querystring.stringify({
     query: JSON.stringify({
@@ -295,4 +299,33 @@ test('[get] missing collection -> two database servers -> proxy to an existing c
   t.equal(response.data.items[0].firstName, 'Joe4', 'first item firstName was Joe4');
   t.equal(response.data.items[0].lastName, 'Bloggs4', 'first item firstName was Bloggs4');
   t.equal(response.data.items[0].email, 'joe.bloggs4@example.com', 'first item email was joe.bloggs4@example.com');
+});
+
+test('[get] missing collection -> two database servers -> proxy to an existing collection containing 100 records with default pagination', async t => {
+  t.plan(3);
+
+  await bringUp(2);
+  const server = await createServer({
+    servers: [
+      'http://localhost:8000',
+      'http://localhost:8001'
+    ]
+  }).start();
+
+  await setupNewCollectionWithRecords(100);
+
+  const response = await httpRequest(`/foundcl`, {
+    baseURL: 'http://localhost:8082',
+    headers: {
+      host: 'founddb.bitabase.test'
+    }
+  });
+
+  await promisify(server.stop)();
+  await bringDown();
+
+  t.equal(response.status, 200, 'correct status code 200 returned');
+
+  t.equal(response.data.count, 100, 'correct count returned');
+  t.equal(response.data.items.length, 10, 'correct items returned');
 });

@@ -3,6 +3,7 @@ const callarest = require('callarest');
 const sendJsonResponse = require('../modules/sendJsonResponse');
 const getCollectionDefinition = require('../common/getCollectionDefinition');
 const createCollection = require('../common/createCollection');
+const flatZip = require('../modules/flatZip')
 
 const getRecordsFromServer = (server, collectionDefinition, databaseName, collectionName, query, callback) => {
   callarest({
@@ -37,16 +38,13 @@ function sendFinalResponseToServer (allErrors, allRecords, response) {
     return sendJsonResponse(500, 'Unexpected Server Error', response);
   }
 
-  const accumulatedRecords = allRecords.reduce((acc, record) => {
-    acc.count = acc.count + record.count;
-    acc.items = acc.items.concat(record.items);
-    return acc;
-  }, {
-    count: 0,
-    items: []
-  });
+  const itemBatches = allRecords.map(records => records.items)
+  const items = flatZip(itemBatches, 10)
+  const countBatches = allRecords.map(records => records.count)
 
-  return sendJsonResponse(200, accumulatedRecords, response);
+  const count = countBatches.reduce((count, batchCount) => count + batchCount, 0)
+
+  return sendJsonResponse(200, {count, items}, response);
 }
 
 const performGet = config => function (request, response, databaseName, collectionName, usageCollector) {
