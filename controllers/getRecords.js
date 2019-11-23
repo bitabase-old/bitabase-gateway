@@ -32,17 +32,19 @@ const getRecordsFromServer = (server, collectionDefinition, databaseName, collec
   });
 };
 
-function sendFinalResponseToServer (allErrors, allRecords, response) {
+function sendFinalResponseToServer (allErrors, allRecords, limit, sendTicks, response) {
   if (allErrors.length > 0) {
     console.log({ allErrors });
     return sendJsonResponse(500, 'Unexpected Server Error', response);
   }
 
   const itemBatches = allRecords.map(records => records.items)
-  const items = flatZip(itemBatches, 10)
+  const items = flatZip(itemBatches, limit)
   const countBatches = allRecords.map(records => records.count)
 
   const count = countBatches.reduce((count, batchCount) => count + batchCount, 0)
+
+  sendTicks(items.length)
 
   return sendJsonResponse(200, {count, items}, response);
 }
@@ -52,6 +54,9 @@ const performGet = config => function (request, response, databaseName, collecti
     if (error) {
       return sendJsonResponse(error.status, { error: error.message }, response);
     }
+
+    const parsedUrl = new URL(`https://url.test${request.url}`);
+    const limit = parseInt(parsedUrl.searchParams.get('limit') || 10);
 
     const allErrors = [];
     const allRecords = [];
@@ -68,15 +73,12 @@ const performGet = config => function (request, response, databaseName, collecti
 
       const isDone = serverResponses === config.servers.length;
       if (isDone) {
-        if (allErrors.length === 0) {
-          usageCollector.tick(databaseName, collectionName, 'read');
+        function sendTicks (ticks) {
+          usageCollector.tick(databaseName, collectionName, 'read', ticks || 1);
         }
-
-        sendFinalResponseToServer(allErrors, allRecords, response);
+        sendFinalResponseToServer(allErrors, allRecords, limit, sendTicks, response);
       }
     }
-
-    const parsedUrl = new URL(`https://url.test${request.url}`);
 
     config.servers.forEach(server =>
       getRecordsFromServer(server, collectionDefinition, databaseName, collectionName, parsedUrl.search, handleRecordsFromServer)
