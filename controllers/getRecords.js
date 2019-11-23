@@ -68,7 +68,12 @@ const performGet = config => function (request, response, databaseName, collecti
       }
 
       if (records && records.response.statusCode === 200) {
-        allRecords.push(JSON.parse(records.body));
+        try {
+          allRecords.push(JSON.parse(records.body));
+        } catch (error) {
+          console.log('Error parsing JSON from server')
+          console.log('Body:\n', records.body, '\n\n\n')
+        }
       }
 
       const isDone = serverResponses === config.servers.length;
