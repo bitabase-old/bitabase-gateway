@@ -6,7 +6,7 @@ const createCollection = require('../common/createCollection');
 
 const getRecordsFromServer = (server, collectionDefinition, databaseName, collectionName, recordId, callback) => {
   callarest({
-    url: `${server}/v1/databases/${databaseName}/collections/${collectionName}/records/${recordId}`
+    url: `${server}/v1/databases/${databaseName}/records/${collectionName}/${recordId}`
   }, function (error, records) {
     if (error) {
       return callback(error);

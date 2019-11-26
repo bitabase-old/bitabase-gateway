@@ -14,7 +14,7 @@ function postRecordToServer (server, databaseName, collectionName, body, resolve
       'Content-Type': 'application/json'
     },
     data: JSON.stringify(body),
-    url: `${server}/v1/databases/${databaseName}/collections/${collectionName}/records`
+    url: `${server}/v1/databases/${databaseName}/records/${collectionName}`
   }, function (error, record) {
     if (error) {
       return callback(error);

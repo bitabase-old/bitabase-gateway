@@ -3,11 +3,11 @@ const callarest = require('callarest');
 const sendJsonResponse = require('../modules/sendJsonResponse');
 const getCollectionDefinition = require('../common/getCollectionDefinition');
 const createCollection = require('../common/createCollection');
-const flatZip = require('../modules/flatZip')
+const flatZip = require('../modules/flatZip');
 
 const getRecordsFromServer = (server, collectionDefinition, databaseName, collectionName, query, callback) => {
   callarest({
-    url: `${server}/v1/databases/${databaseName}/collections/${collectionName}/records${query.trim()}`
+    url: `${server}/v1/databases/${databaseName}/records/${collectionName}${query.trim()}`
   }, function (error, records) {
     if (error) {
       return callback(error);
@@ -38,15 +38,15 @@ function sendFinalResponseToServer (allErrors, allRecords, limit, sendTicks, res
     return sendJsonResponse(500, 'Unexpected Server Error', response);
   }
 
-  const itemBatches = allRecords.map(records => records.items)
-  const items = flatZip(itemBatches, limit)
-  const countBatches = allRecords.map(records => records.count)
+  const itemBatches = allRecords.map(records => records.items);
+  const items = flatZip(itemBatches, limit);
+  const countBatches = allRecords.map(records => records.count);
 
-  const count = countBatches.reduce((count, batchCount) => count + batchCount, 0)
+  const count = countBatches.reduce((count, batchCount) => count + batchCount, 0);
 
-  sendTicks(items.length)
+  sendTicks(items.length);
 
-  return sendJsonResponse(200, {count, items}, response);
+  return sendJsonResponse(200, { count, items }, response);
 }
 
 const performGet = config => function (request, response, databaseName, collectionName, usageCollector) {
@@ -61,6 +61,11 @@ const performGet = config => function (request, response, databaseName, collecti
     const allErrors = [];
     const allRecords = [];
     let serverResponses = 0;
+
+    function sendTicks (ticks) {
+      usageCollector.tick(databaseName, collectionName, 'read', ticks || 1);
+    }
+
     function handleRecordsFromServer (error, records) {
       serverResponses = serverResponses + 1;
       if (error) {
@@ -80,9 +85,6 @@ const performGet = config => function (request, response, databaseName, collecti
 
       const isDone = serverResponses === config.servers.length;
       if (isDone) {
-        function sendTicks (ticks) {
-          usageCollector.tick(databaseName, collectionName, 'read', ticks || 1);
-        }
         sendFinalResponseToServer(allErrors, allRecords, limit, sendTicks, response);
       }
     }

@@ -34,7 +34,7 @@ const createCollection = async (headers, database, data) => {
 };
 
 const createRecord = async ({ headers, database, server, collection, data }) => {
-  const request = await httpRequest(`/v1/databases/${database.name}/collections/${collection.name}/records`, {
+  const request = await httpRequest(`/v1/databases/${database.name}/records/${collection.name}`, {
     baseURL: server || config.servers[0],
     method: 'post',
     headers,

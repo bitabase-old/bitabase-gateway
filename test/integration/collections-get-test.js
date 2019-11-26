@@ -314,7 +314,7 @@ test('[get] missing collection -> two database servers -> proxy to an existing c
 
   await setupNewCollectionWithRecords(100);
 
-  const response = await httpRequest(`/foundcl`, {
+  const response = await httpRequest('/foundcl', {
     baseURL: 'http://localhost:8082',
     headers: {
       host: 'founddb.bitabase.test'
