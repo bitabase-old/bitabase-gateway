@@ -5,7 +5,7 @@ function getDatabaseNameFromDomain (matcher, domain) {
     return null;
   }
 
-  const invalidDatabaseName = databaseName.match(/[^a-z0-9]/gi, '');
+  const invalidDatabaseName = databaseName.match(/[^a-z0-9-]/gi, '');
 
   return !invalidDatabaseName ? databaseName : null;
 }

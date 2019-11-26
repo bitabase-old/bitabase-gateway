@@ -5,7 +5,7 @@ function getCollectionNameFromPath (url) {
     return null;
   }
 
-  const invalidCollectionName = collectionName.match(/[^a-z0-9]/gi, '');
+  const invalidCollectionName = collectionName.match(/[^a-z0-9-]/gi, '');
 
   return !invalidCollectionName ? collectionName : null;
 }
