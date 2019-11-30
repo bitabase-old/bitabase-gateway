@@ -2,6 +2,8 @@ const test = require('tape');
 const querystring = require('querystring');
 const { promisify } = require('util');
 
+const config = require('../../config');
+
 const { bringUp, bringDown } = require('../helpers/environment');
 const httpRequest = require('../helpers/httpRequest');
 const { createUserAndSession } = require('../helpers/session');
@@ -95,6 +97,55 @@ test('[get] missing collection -> proxy to an existing collection', async t => {
     count: 0,
     items: []
   });
+});
+
+test('[get] missing collection -> proxy to an existing collection forwarding headers', async t => {
+  t.plan(3);
+
+  await bringUp();
+  const server = await createServer().start();
+
+  const session = await createUserAndSession();
+  const database = await createDatabase(session.asHeaders, {
+    name: 'founddb'
+  });
+  await httpRequest(
+    `${config.managerUrl}/v1/databases/${database.name}/collections`, {
+      method: 'post',
+      headers: {
+        host: 'founddb.bitabase.test',
+        ...session.asHeaders
+      },
+      data: {
+        name: 'foundcl',
+        presenters: ['{...record headerTest: headers["x-hopefully"]}']
+      }
+    }
+  );
+
+  await httpRequest('/foundcl', {
+    method: 'post',
+    data: { a: 1 },
+    baseURL: 'http://localhost:8082',
+    headers: {
+      host: 'founddb.bitabase.test'
+    }
+  });
+
+  const response = await httpRequest('/foundcl', {
+    baseURL: 'http://localhost:8082',
+    headers: {
+      host: 'founddb.bitabase.test',
+      'X-Hopefully': 'yes'
+    }
+  });
+
+  await promisify(server.stop)();
+  await bringDown();
+
+  t.equal(response.status, 200);
+  t.equal(response.data.count, 1);
+  t.equal(response.data.items[0].headerTest, 'yes');
 });
 
 test('[get] missing collection -> two database servers -> proxy to an existing collection', async t => {

@@ -5,9 +5,10 @@ const getCollectionDefinition = require('../common/getCollectionDefinition');
 const createCollection = require('../common/createCollection');
 const flatZip = require('../modules/flatZip');
 
-const getRecordsFromServer = (server, collectionDefinition, databaseName, collectionName, query, callback) => {
+const getRecordsFromServer = (server, collectionDefinition, headers, databaseName, collectionName, query, callback) => {
   callarest({
-    url: `${server}/v1/databases/${databaseName}/records/${collectionName}${query.trim()}`
+    url: `${server}/v1/databases/${databaseName}/records/${collectionName}${query.trim()}`,
+    headers: headers
   }, function (error, records) {
     if (error) {
       return callback(error);
@@ -23,7 +24,7 @@ const getRecordsFromServer = (server, collectionDefinition, databaseName, collec
           return callback(error);
         }
 
-        getRecordsFromServer(server, null, databaseName, collectionName, query, callback);
+        getRecordsFromServer(server, null, headers, databaseName, collectionName, query, callback);
       });
       return;
     }
@@ -89,8 +90,9 @@ const performGet = config => function (request, response, databaseName, collecti
       }
     }
 
+    const headers = request.headers;
     config.servers.forEach(server =>
-      getRecordsFromServer(server, collectionDefinition, databaseName, collectionName, parsedUrl.search, handleRecordsFromServer)
+      getRecordsFromServer(server, collectionDefinition, headers, databaseName, collectionName, parsedUrl.search, handleRecordsFromServer)
     );
   });
 };
