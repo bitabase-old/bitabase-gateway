@@ -4,6 +4,7 @@ const path = require('path');
 
 const managerServer = require('../../shared/bitabase-manager/server');
 const createDataServer = require('../../shared/bitabase-server/server');
+const { flushCache } = require('../../shared/bitabase-server/modules/cachableSqlite');
 
 const rmdir = promisify(fs.rmdir);
 
@@ -30,6 +31,8 @@ async function bringUp (dataServerCount = 1) {
 }
 
 async function bringDown () {
+  flushCache();
+
   await managerServer.stop();
 
   for (let server = 0; server < dataServers.length; server++) {
