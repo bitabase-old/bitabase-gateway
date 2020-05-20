@@ -18,7 +18,7 @@
     "generic-errors": "^2.1.0",
     "lokijs": "^1.5.7",
     "mathjs": "^6.2.3",
-    "mkdirp": "^0.5.2",
+    "mkdirp": "^0.5.5",
     "node-mini-migrations": "^2.0.1",
     "pbkdf2-wrapper": "^1.2.1",
     "righto": "^6.0.1",
