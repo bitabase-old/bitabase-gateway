@@ -61,12 +61,13 @@ function createServer (configOverrides) {
       sendJsonResponse(404, { error: 'not found' }, response);
     }).listen(config.port);
 
-    console.log(`Listening on port ${config.port}`);
+    console.log(`[bitabase-gateway] Listening on port ${config.port}`);
 
     return { start, stop };
   }
 
   function stop (callback) {
+    console.log('[bitabase-gateway] Shutting down');
     usageCollector.stop(callback);
     server && server.close();
   }
