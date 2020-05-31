@@ -25,7 +25,9 @@
     "write-response": "^1.0.0"
   },
   "devDependencies": {
+    "clarify": "^2.1.0",
     "promises-debugger": "^1.0.3",
-    "tape": "^4.11.0"
+    "tape": "^4.11.0",
+    "trace": "^3.1.1"
   }
 }

@@ -1,3 +1,8 @@
+if (process.env.NODE_ENV === 'development') {
+  require('trace');
+  require('clarify');
+}
+
 const http = require('http');
 
 const defaultConfig = require('./config');
@@ -20,8 +25,10 @@ function createServer (configOverrides) {
 
   const usageCollector = setupUsageCollector(config);
 
+  const [host, port] = config.bind.split(':');
+
   let server;
-  async function start () {
+  function start () {
     server = http.createServer((request, response) => {
       setCrossDomainOriginHeaders(request, response);
 
@@ -59,9 +66,9 @@ function createServer (configOverrides) {
       }
 
       sendJsonResponse(404, { error: 'not found' }, response);
-    }).listen(config.port);
+    }).listen(port, host);
 
-    console.log(`[bitabase-gateway] Listening on port ${config.port}`);
+    console.log(`[bitabase-gateway] Listening on ${host}:${port}`);
 
     return { start, stop };
   }

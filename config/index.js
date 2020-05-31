@@ -1,6 +1,6 @@
 const config = {
-  dev: {
-    port: 8082,
+  development: {
+    bind: '0.0.0.0:8082',
     secret: 'not-the-closest-kept-secret-in-the-world',
     managerUrl: 'http://localhost:8081',
     accountMapper: '(.*).bitabase.test',
@@ -10,7 +10,7 @@ const config = {
   },
 
   production: {
-    port: 80,
+    bind: '0.0.0.0:80',
     secret: process.env.BB_INTERNAL_SECRET,
     managerUrl: 'https://api.bitabase.net',
     accountMapper: '(.*).bitabase.net',
@@ -18,4 +18,4 @@ const config = {
   }
 };
 
-module.exports = config[process.env.NODE_ENV || 'dev'];
+module.exports = config[process.env.NODE_ENV || 'development'];
