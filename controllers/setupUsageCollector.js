@@ -40,7 +40,7 @@ function setupUsageCollector (config) {
       }
     }, function (error, result) {
       if (error) {
-        console.log(error);
+        console.log(error.message);
         return callback && callback(error);
       }
 
