@@ -24,7 +24,7 @@ function createServer (config = {}) {
   const postRecords = require('./controllers/postRecords.js')(config);
 
   const usageCollector = setupUsageCollector(config);
-  const serverSyncer = setupServerSyncer(config);
+  const serverSyncer = setupServerSyncer(config, 'gateway');
 
   let server;
   function start () {
