@@ -13,7 +13,7 @@ function postRecordToServer (config, server, databaseName, collectionName, body,
     headers: {
       'Content-Type': 'application/json'
     },
-    data: JSON.stringify(body),
+    body: JSON.stringify(body),
     url: `${server}/v1/databases/${databaseName}/records/${collectionName}`
   }, function (error, record) {
     if (error) {

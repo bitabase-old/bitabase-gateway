@@ -37,7 +37,7 @@ function setupUsageCollector (config) {
     callarest({
       method: 'post',
       url: `${managerUrl}/v1/usage-batch`,
-      data: JSON.stringify(accumlationData),
+      body: JSON.stringify(accumlationData),
       headers: {
         'X-Internal-Secret': config.secret
       }

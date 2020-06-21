@@ -4,7 +4,7 @@ function createCollection (server, databaseName, collectionName, collectionDefin
   callarest({
     method: 'post',
     url: `${server}/v1/databases/${databaseName}/collections`,
-    data: collectionDefinition.schema
+    body: collectionDefinition.schema
   }, callback);
 }
 
