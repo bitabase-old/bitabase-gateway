@@ -8,7 +8,7 @@ const sendJsonResponse = require('./modules/sendJsonResponse');
 const getDatabaseNameFromDomain = require('./common/getDatabaseNameFromDomain');
 const getCollectionNameFromPath = require('./common/getCollectionNameFromPath');
 const setupUsageCollector = require('./controllers/setupUsageCollector');
-const setupServerSyncer = require('./controllers/setupServerSyncer');
+const setupServerSyncer = require('./modules/setupServerSyncer');
 
 function createServer (config = {}) {
   config.bindHost = config.bindHost || '0.0.0.0';

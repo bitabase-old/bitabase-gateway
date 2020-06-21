@@ -1,7 +1,5 @@
 const { promisify } = require('util');
 
-const os = require('os');
-
 const rqlite = {
   connect: promisify(require('rqlite-fp/connect')),
   getAll: promisify(require('rqlite-fp/getAll')),
@@ -15,6 +13,8 @@ async function setupServerSyncer (config, type) {
     return;
   }
 
+  const hostAddress = `http://${config.bindHost}:${config.bindPort}`;
+
   const dbConnection = await rqlite.connect(config.rqliteAddr, {
     retries: 3,
     retryDelay: 250,
@@ -24,38 +24,39 @@ async function setupServerSyncer (config, type) {
   await rqlite.run(dbConnection, 'CREATE TABLE IF NOT EXISTS servers (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT, host TEXT, lastPing INTEGER)');
 
   async function pingSelfInDatabase () {
-    const server = await rqlite.getOne(dbConnection, 'SELECT * FROM servers WHERE type = ? AND host = ?', [type, os.hostname()]);
+    const server = await rqlite.getOne(dbConnection, 'SELECT * FROM servers WHERE type = ? AND host = ?', [type, hostAddress]);
     if (!server) {
-      await rqlite.run(dbConnection, 'INSERT INTO servers (type, host, lastPing) VALUES (?, ?, ?)', [type, os.hostname(), Date.now()]);
+      await rqlite.run(dbConnection, 'INSERT INTO servers (type, host, lastPing) VALUES (?, ?, ?)', [type, hostAddress, Date.now()]);
     } else {
-      await rqlite.run(dbConnection, 'UPDATE servers SET lastPing = ? WHERE type = ? AND host = ?', [type, Date.now(), os.hostname()]);
+      await rqlite.run(dbConnection, 'UPDATE servers SET lastPing = ? WHERE type = ? AND host = ?', [Date.now(), type, hostAddress]);
     }
   }
 
   async function syncServers (type, servers) {
-    config[type] = config[type] || [];
+    config[type + 's'] = config[type + 's'] || [];
 
     servers.forEach(server => {
       const withinPingLimits = Date.now() - server.lastPing < 15000;
-      if (!config[type].includes(server.host) && withinPingLimits) {
-        config[type].push(server.host);
-        console.log(`Discovered new server in data store: [${server.host}]`);
+
+      if (!config[type + 's'].includes(server.host) && withinPingLimits) {
+        config[type + 's'].push(server.host);
+        console.log(`Discovered new ${type} server in data store: [${server.host}]`);
       }
 
-      if (config[type].includes(server.host) && !withinPingLimits) {
-        const index = config[type].indexOf(server.host);
-        if (index !== -1) config[type].splice(index, 1);
+      if (config[type + 's'].includes(server.host) && !withinPingLimits) {
+        const index = config[type + 's'].indexOf(server.host);
+        if (index !== -1) config[type + 's'].splice(index, 1);
 
-        console.log(`Removed server as last ping longer than 15 seconds: [${server.host}]`);
+        console.log(`Removed ${type} server as last ping longer than 15 seconds: [${server.host}]`);
       }
     });
 
-    config[type].forEach(serverHost => {
+    config[type + 's'].forEach(serverHost => {
       if (!servers.find(server => server.host === serverHost)) {
-        const index = config[type].indexOf(serverHost);
-        if (index !== -1) config[type].splice(index, 1);
+        const index = config[type + 's'].indexOf(serverHost);
+        if (index !== -1) config[type + 's'].splice(index, 1);
 
-        console.log(`Removed server no longer in data store: [${serverHost}]`);
+        console.log(`Removed ${type} server no longer in data store: [${serverHost}]`);
       }
     });
   }

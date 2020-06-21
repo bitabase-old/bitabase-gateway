@@ -32,7 +32,10 @@ function setupUsageCollector (config) {
     const accumlationData = Object.fromEntries(usageCollector.accumulator);
     usageCollector.reset();
 
-    const managerUrl = selectRandomItemFromArray(config.managers);
+    const managerUrl = selectRandomItemFromArray(config.managers || []);
+    if (!managerUrl) {
+      return console.log('usageCollection could not send data as no managers exist');
+    }
 
     callarest({
       method: 'post',
