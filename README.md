@@ -8,6 +8,50 @@
 
 This is a very early attempt at the gateway server.
 
+## Getting Started
+### From the CLI
+Running the following:
+```bash
+npm install --global bitabase-gateway
+bitabase-gateway --help
+```
+
+Will output the below:
+```bash
+📦 Bitabase-Gateway - v1.5.1
+The scalable, sharded database engine.
+https://docs.bitabase.com
+
+The following commands and arguments are available when starting Bitabase
+
+Commands:
+  start                            Start the bitabase gateway stack
+    --bind-host                    Hostname to bind server to (default: 0.0.0.0)
+    --bind-port                    Port to bind server to (default: 8001)
+    --rqlite-addr                  Path to contact rqlite
+    --secret                       The internal request secret
+    --account-mapper               The regex to take the account from the incoming host (default: (.*).bitabase.test)
+
+No command specified
+```
+
+You can start a bitabase gateway server by running:
+
+```bash
+bitabase-gateway start
+```
+
+### From NodeJS
+```javascript
+const bitabaseServer = require('bitabase-gateway/server');
+
+const server = bitabasegateway({
+  bindHost: '0.0.0.0'
+});
+
+server.start();
+```
+
 ## Endpoints
 
 All requests are proxied through to the database servers based on the

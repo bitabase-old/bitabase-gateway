@@ -17,7 +17,7 @@ https://docs.bitabase.com
 The following commands and arguments are available when starting Bitabase
 
 Commands:
-  start                            Start the bitabase manager stack
+  start                            Start the bitabase gateway stack
     --bind-host                    Hostname to bind server to (default: 0.0.0.0)
     --bind-port                    Port to bind server to (default: 8001)
     --rqlite-addr                  Path to contact rqlite
