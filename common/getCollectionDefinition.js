@@ -1,10 +1,12 @@
 const callarest = require('callarest');
-const config = require('../config');
+const selectRandomItemFromArray = require('../modules/selectRandomItemFromArray');
 const ErrorObject = require('../modules/error');
 
-function getCollectionSchema (databaseName, collectionName, callback) {
+function getCollectionDefinition (config, databaseName, collectionName, callback) {
+  const managerUrl = selectRandomItemFromArray(config.managers);
+
   callarest({
-    url: `${config.managerUrl}/v1/databases/${databaseName}/collections/${collectionName}`,
+    url: `${managerUrl}/v1/databases/${databaseName}/collections/${collectionName}`,
     headers: {
       'X-Internal-Secret': config.secret
     }
@@ -29,4 +31,4 @@ function getCollectionSchema (databaseName, collectionName, callback) {
   });
 }
 
-module.exports = getCollectionSchema;
+module.exports = getCollectionDefinition;

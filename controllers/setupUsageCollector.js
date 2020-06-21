@@ -1,4 +1,5 @@
 const callarest = require('callarest');
+const selectRandomItemFromArray = require('../modules/selectRandomItemFromArray');
 
 function createUsageCollector () {
   const accumulator = new Map();
@@ -31,16 +32,20 @@ function setupUsageCollector (config) {
     const accumlationData = Object.fromEntries(usageCollector.accumulator);
     usageCollector.reset();
 
+    const managerUrl = selectRandomItemFromArray(config.managers);
+
     callarest({
       method: 'post',
-      url: `${config.managerUrl}/v1/usage-batch`,
+      url: `${managerUrl}/v1/usage-batch`,
       data: JSON.stringify(accumlationData),
       headers: {
         'X-Internal-Secret': config.secret
       }
     }, function (error, result) {
       if (error) {
-        console.log(error.message)
+        if (error.code === 'ECONNREFUSED') {
+          return callback && callback(new Error('ECONNREFUSED while running /v1/usage-batch'));
+        }
         return callback && callback(error);
       }
 

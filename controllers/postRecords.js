@@ -7,7 +7,7 @@ const selectRandomItemFromArray = require('../modules/selectRandomItemFromArray'
 const getCollectionDefinition = require('../common/getCollectionDefinition');
 const createCollection = require('../common/createCollection');
 
-function postRecordToServer (server, databaseName, collectionName, body, resolveMissing = true, callback) {
+function postRecordToServer (config, server, databaseName, collectionName, body, resolveMissing = true, callback) {
   callarest({
     method: 'post',
     headers: {
@@ -21,7 +21,7 @@ function postRecordToServer (server, databaseName, collectionName, body, resolve
     }
 
     if (record.response.statusCode === 404 && resolveMissing) {
-      const collectionDefinition = righto(getCollectionDefinition, databaseName, collectionName);
+      const collectionDefinition = righto(getCollectionDefinition, config, databaseName, collectionName);
       const createdCollection = righto(createCollection, server, databaseName, collectionName, collectionDefinition);
 
       createdCollection(function (error, result) {
@@ -29,7 +29,7 @@ function postRecordToServer (server, databaseName, collectionName, body, resolve
           return callback(error);
         }
 
-        postRecordToServer(server, databaseName, collectionName, body, false, callback);
+        postRecordToServer(config, server, databaseName, collectionName, body, false, callback);
       });
 
       return;
@@ -42,7 +42,7 @@ function postRecordToServer (server, databaseName, collectionName, body, resolve
 const performPost = config => function (request, response, databaseName, collectionName, usageCollector) {
   const server = selectRandomItemFromArray(config.servers);
   const body = righto(parseJsonBody, request);
-  const postedRecord = righto(postRecordToServer, server, databaseName, collectionName, body, true);
+  const postedRecord = righto(postRecordToServer, config, server, databaseName, collectionName, body, true);
 
   postedRecord(function (error, result) {
     if (error) {

@@ -1,37 +1,34 @@
 if (process.env.NODE_ENV === 'development') {
-  require('trace');
-  require('clarify');
+  require('async-bugs');
 }
 
 const http = require('http');
 
-const defaultConfig = require('./config');
-
 const sendJsonResponse = require('./modules/sendJsonResponse');
-const setCrossDomainOriginHeaders = require('./modules/setCrossDomainOriginHeaders');
 const getDatabaseNameFromDomain = require('./common/getDatabaseNameFromDomain');
 const getCollectionNameFromPath = require('./common/getCollectionNameFromPath');
 const setupUsageCollector = require('./controllers/setupUsageCollector');
+const setupServerSyncer = require('./controllers/setupServerSyncer');
 
-function createServer (configOverrides) {
-  const config = {
-    ...defaultConfig,
-    ...configOverrides
-  };
+function createServer (config = {}) {
+  config.bindHost = config.bindHost || '0.0.0.0';
+  config.bindPort = config.bindPort || 8002;
+  config.accountMapper = config.accountMapper || '(.*).bitabase.test';
+
+  if (!config.secret) {
+    throw new Error('Config option secret is required but was not provided');
+  }
 
   const getRecord = require('./controllers/getRecord.js')(config);
   const getRecords = require('./controllers/getRecords.js')(config);
   const postRecords = require('./controllers/postRecords.js')(config);
 
   const usageCollector = setupUsageCollector(config);
-
-  const [host, port] = config.bind.split(':');
+  const serverSyncer = setupServerSyncer(config);
 
   let server;
   function start () {
     server = http.createServer((request, response) => {
-      setCrossDomainOriginHeaders(request, response);
-
       const databaseName = getDatabaseNameFromDomain(
         config.accountMapper, request.headers.host
       );
@@ -66,17 +63,24 @@ function createServer (configOverrides) {
       }
 
       sendJsonResponse(404, { error: 'not found' }, response);
-    }).listen(port, host);
+    });
 
-    console.log(`[bitabase-gateway] Listening on ${host}:${port}`);
+    server.on('listening', function () {
+      const address = server.address();
+      console.log(`[bitabase-manager] Listening on ${config.bindHost} (${address.address}:${address.port})`);
+    });
+
+    server.listen(config.bindPort, config.bindHost);
 
     return { start, stop };
   }
 
   function stop (callback) {
     console.log('[bitabase-gateway] Shutting down');
-    usageCollector.stop(callback);
+    usageCollector.stop();
+    serverSyncer && serverSyncer.stop && serverSyncer.stop();
     server && server.close();
+    callback && callback();
   }
 
   return {

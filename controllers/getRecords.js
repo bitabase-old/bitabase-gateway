@@ -51,7 +51,7 @@ function sendFinalResponseToServer (allErrors, allRecords, limit, sendTicks, res
 }
 
 const performGet = config => function (request, response, databaseName, collectionName, usageCollector) {
-  getCollectionDefinition(databaseName, collectionName, function (error, collectionDefinition) {
+  getCollectionDefinition(config, databaseName, collectionName, function (error, collectionDefinition) {
     if (error) {
       return sendJsonResponse(error.status, { error: error.message }, response);
     }

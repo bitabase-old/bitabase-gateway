@@ -1,36 +1,40 @@
-const test = require('tape');
-const querystring = require('querystring');
 const { promisify } = require('util');
+const querystring = require('querystring');
 
-const config = require('../../config');
+const test = require('tape');
+const writeResponse = require('write-response');
 
-const { bringUp, bringDown } = require('../helpers/environment');
 const httpRequest = require('../helpers/httpRequest');
-const { createUserAndSession } = require('../helpers/session');
-
-const {
-  createDatabase,
-  createCollection,
-  createRecord
-} = require('../helpers/databases');
+const createMockServer = require('../helpers/createMockServer');
 
 const createServer = require('../../server');
 
 test('[get] missing collection -> missing db -> proxy to a none existing collection', async t => {
   t.plan(2);
 
-  await bringUp();
-  const server = await createServer().start();
+  const mockServer = createMockServer(8000, function (request, response) {
+    writeResponse(404, {}, response);
+  });
+  const mockManager = createMockServer(8001, function (request, response) {
+    writeResponse(404, {}, response);
+  });
+
+  const server = await createServer({
+    secret: 'test',
+    servers: ['http://0.0.0.0:8000'],
+    managers: ['http://0.0.0.0:8001']
+  }).start();
 
   const result = await httpRequest('/one', {
-    baseURL: 'http://localhost:8082',
+    baseURL: 'http://localhost:8002',
     headers: {
       host: 'notfound.bitabase.test'
     }
   });
 
+  mockServer.close();
+  mockManager.close();
   await promisify(server.stop)();
-  await bringDown();
 
   t.equal(result.status, 404);
 
@@ -42,23 +46,35 @@ test('[get] missing collection -> missing db -> proxy to a none existing collect
 test('[get] missing collection -> existing db -> proxy to a none existing collection', async t => {
   t.plan(2);
 
-  await bringUp();
-  const server = await createServer().start();
-
-  const session = await createUserAndSession();
-  await createDatabase(session.asHeaders, {
-    name: 'founddb'
+  const mockServer = createMockServer(8000, function (request, response) {
+    writeResponse(404, {}, response);
+  });
+  const mockManager = createMockServer(8001, function (request, response) {
+    if (request.url === '/v1/users') {
+      return writeResponse(200, { sessionId: 1, sessionSecret: 1 }, response);
+    }
+    if (request.url === '/v1/sessions') {
+      return writeResponse(200, { sessionId: 1, sessionSecret: 1 }, response);
+    }
+    writeResponse(404, {}, response);
   });
 
+  const server = await createServer({
+    secret: 'test',
+    servers: ['http://0.0.0.0:8000'],
+    managers: ['http://0.0.0.0:8001']
+  }).start();
+
   const result = await httpRequest('/notfoundcollection', {
-    baseURL: 'http://localhost:8082',
+    baseURL: 'http://localhost:8002',
     headers: {
       host: 'founddb.bitabase.test'
     }
   });
 
+  mockServer.close();
+  mockManager.close();
   await promisify(server.stop)();
-  await bringDown();
 
   t.equal(result.status, 404);
 
@@ -70,26 +86,32 @@ test('[get] missing collection -> existing db -> proxy to a none existing collec
 test('[get] missing collection -> proxy to an existing collection', async t => {
   t.plan(2);
 
-  await bringUp();
-  const server = await createServer().start();
+  const mockServer = createMockServer(8000, function (request, response) {
+    writeResponse(200, {
+      count: 0,
+      items: []
+    }, response);
+  });
+  const mockManager = createMockServer(8001, function (request, response) {
+    writeResponse(200, {}, response);
+  });
 
-  const session = await createUserAndSession();
-  const database = await createDatabase(session.asHeaders, {
-    name: 'founddb'
-  });
-  await createCollection(session.asHeaders, database, {
-    name: 'foundcl'
-  });
+  const server = await createServer({
+    secret: 'test',
+    servers: ['http://0.0.0.0:8000'],
+    managers: ['http://0.0.0.0:8001']
+  }).start();
 
   const response = await httpRequest('/foundcl', {
-    baseURL: 'http://localhost:8082',
+    baseURL: 'http://localhost:8002',
     headers: {
       host: 'founddb.bitabase.test'
     }
   });
 
+  mockServer.close();
+  mockManager.close();
   await promisify(server.stop)();
-  await bringDown();
 
   t.equal(response.status, 200);
 
@@ -99,22 +121,38 @@ test('[get] missing collection -> proxy to an existing collection', async t => {
   });
 });
 
-test('[get] missing collection -> proxy to an existing collection forwarding headers', async t => {
+test('[get] missing collection -> proxy to an existing collection with item', async t => {
   t.plan(3);
 
-  await bringUp();
-  const server = await createServer().start();
-
-  const session = await createUserAndSession();
-  const database = await createDatabase(session.asHeaders, {
-    name: 'founddb'
+  const mockServer = createMockServer(8000, function (request, response) {
+    writeResponse(200, {
+      count: 1,
+      items: [{
+        headerTest: 'yes'
+      }]
+    }, response);
   });
+  const mockManager = createMockServer(8001, function (request, response) {
+    if (request.url === '/v1/users') {
+      return writeResponse(200, { sessionId: 1, sessionSecret: 1 }, response);
+    }
+    if (request.url === '/v1/sessions') {
+      return writeResponse(200, { sessionId: 1, sessionSecret: 1 }, response);
+    }
+    writeResponse(200, {}, response);
+  });
+
+  const server = await createServer({
+    secret: 'test',
+    servers: ['http://0.0.0.0:8000'],
+    managers: ['http://0.0.0.0:8001']
+  }).start();
+
   await httpRequest(
-    `${config.managerUrl}/v1/databases/${database.name}/collections`, {
+    'http://0.0.0.0:8001/v1/databases/founddb/collections', {
       method: 'post',
       headers: {
-        host: 'founddb.bitabase.test',
-        ...session.asHeaders
+        host: 'founddb.bitabase.test'
       },
       data: {
         name: 'foundcl',
@@ -126,22 +164,23 @@ test('[get] missing collection -> proxy to an existing collection forwarding hea
   await httpRequest('/foundcl', {
     method: 'post',
     data: { a: 1 },
-    baseURL: 'http://localhost:8082',
+    baseURL: 'http://localhost:8002',
     headers: {
       host: 'founddb.bitabase.test'
     }
   });
 
   const response = await httpRequest('/foundcl', {
-    baseURL: 'http://localhost:8082',
+    baseURL: 'http://localhost:8002',
     headers: {
       host: 'founddb.bitabase.test',
       'X-Hopefully': 'yes'
     }
   });
 
+  mockServer.close();
+  mockManager.close();
   await promisify(server.stop)();
-  await bringDown();
 
   t.equal(response.status, 200);
   t.equal(response.data.count, 1);
@@ -151,31 +190,45 @@ test('[get] missing collection -> proxy to an existing collection forwarding hea
 test('[get] missing collection -> two database servers -> proxy to an existing collection', async t => {
   t.plan(2);
 
-  await bringUp(2);
+  const mockServer1 = createMockServer(8010, function (request, response) {
+    writeResponse(200, {
+      count: 0,
+      items: []
+    }, response);
+  });
+  const mockServer2 = createMockServer(8011, function (request, response) {
+    writeResponse(200, {
+      count: 0,
+      items: []
+    }, response);
+  });
+  const mockManager = createMockServer(8001, function (request, response) {
+    if (request.url === '/v1/users') {
+      return writeResponse(200, { sessionId: 1, sessionSecret: 1 }, response);
+    }
+    if (request.url === '/v1/sessions') {
+      return writeResponse(200, { sessionId: 1, sessionSecret: 1 }, response);
+    }
+    writeResponse(200, {}, response);
+  });
+
   const server = await createServer({
-    servers: [
-      'http://localhost:8000',
-      'http://localhost:8001'
-    ]
+    secret: 'test',
+    servers: ['http://0.0.0.0:8010', 'http://0.0.0.0:8011'],
+    managers: ['http://0.0.0.0:8001']
   }).start();
 
-  const session = await createUserAndSession();
-  const database = await createDatabase(session.asHeaders, {
-    name: 'founddb'
-  });
-  await createCollection(session.asHeaders, database, {
-    name: 'foundcl'
-  });
-
   const response = await httpRequest('/foundcl', {
-    baseURL: 'http://localhost:8082',
+    baseURL: 'http://localhost:8002',
     headers: {
       host: 'founddb.bitabase.test'
     }
   });
 
+  mockServer1.close();
+  mockServer2.close();
+  mockManager.close();
   await promisify(server.stop)();
-  await bringDown();
 
   t.equal(response.status, 200);
 
@@ -185,75 +238,63 @@ test('[get] missing collection -> two database servers -> proxy to an existing c
   });
 });
 
-test('[get] missing collection -> two database servers -> proxy to an existing collection with 1 record', async t => {
+test('[get] missing collection -> two database servers -> proxy to an existing collection with records', async t => {
   t.plan(9);
 
-  await bringUp(2);
+  const mockServer1 = createMockServer(8010, function (request, response) {
+    writeResponse(200, {
+      count: 10,
+      items: Array(10).fill('').map((_, i) => ({
+        id: i + 1,
+        firstName: `Joe${i}`,
+        lastName: `Bloggs${i}`,
+        email: `joe.bloggs${i}@example.com`
+      }))
+    }, response);
+  });
+  const mockServer2 = createMockServer(8011, function (request, response) {
+    writeResponse(200, {
+      count: 10,
+      items: Array(10).fill('').map((_, i) => ({
+        id: i + 11,
+        firstName: `Bill${i}`,
+        lastName: `Bloggs${i}`,
+        email: `joe.bloggs${i}@example.com`
+      }))
+    }, response);
+  });
+  const mockManager = createMockServer(8001, function (request, response) {
+    writeResponse(200, {}, response);
+  });
+
   const server = await createServer({
-    servers: [
-      'http://localhost:8000',
-      'http://localhost:8001'
-    ]
+    secret: 'test',
+    servers: ['http://0.0.0.0:8010', 'http://0.0.0.0:8011'],
+    managers: ['http://0.0.0.0:8001']
   }).start();
 
-  const session = await createUserAndSession();
-  const database = await createDatabase(session.asHeaders, {
-    name: 'founddb'
-  });
-  const collection = await createCollection(session.asHeaders, database, {
-    name: 'foundcl',
-    schema: {
-      firstName: ['required', 'string'],
-      lastName: ['required', 'string'],
-      email: ['required', 'string']
-    }
-  });
-
-  // Do a GET to create the collections from manager api...
   await httpRequest('/foundcl', {
-    baseURL: 'http://localhost:8082',
+    baseURL: 'http://localhost:8002',
     headers: {
       host: 'founddb.bitabase.test'
     }
   });
-
-  const promises = [];
-  const servers = [
-    'http://localhost:8000',
-    'http://localhost:8001'
-  ];
-
-  for (let i = 0; i < 10; i++) {
-    promises.push(
-      createRecord({
-        headers: session.asHeaders,
-        database: database,
-        collection: collection,
-        server: servers[i % 2],
-        data: {
-          firstName: `Joe${i}`,
-          lastName: `Bloggs${i}`,
-          email: `joe.bloggs${i}@example.com`
-        }
-      })
-    );
-  }
-
-  await Promise.all(promises);
 
   const response = await httpRequest('/foundcl', {
-    baseURL: 'http://localhost:8082',
+    baseURL: 'http://localhost:8002',
     headers: {
       host: 'founddb.bitabase.test'
     }
   });
 
+  mockServer1.close();
+  mockServer2.close();
+  mockManager.close();
   await promisify(server.stop)();
-  await bringDown();
 
   t.equal(response.status, 200, 'correct status code 200 returned');
 
-  t.equal(response.data.count, 10, 'correct count returned');
+  t.equal(response.data.count, 20, 'correct count returned');
   t.equal(response.data.items.length, 10, 'correct items returned');
 
   t.ok(response.data.items[0].id, 'first item has id field');
@@ -261,69 +302,34 @@ test('[get] missing collection -> two database servers -> proxy to an existing c
   t.ok(response.data.items[0].lastName, 'first item has lastName field');
   t.ok(response.data.items[0].email, 'first item has email field');
 
-  t.ok(response.data.items.find(item => item.firstName === 'Joe1'), 'a record with firstName Joe1 exists');
-  t.ok(response.data.items.find(item => item.lastName === 'Bloggs9'), 'a record with lastName Bloggs9 exists');
+  t.ok(response.data.items.find(item => item.firstName === 'Joe4'), 'a record with firstName Joe4 exists');
+  t.ok(response.data.items.find(item => item.lastName === 'Bloggs4'), 'a record with lastName Bloggs4 exists');
 });
 
-async function setupNewCollectionWithRecords (recordCount) {
-  const session = await createUserAndSession();
-  const database = await createDatabase(session.asHeaders, {
-    name: 'founddb'
-  });
-  const collection = await createCollection(session.asHeaders, database, {
-    name: 'foundcl',
-    schema: {
-      firstName: ['required', 'string'],
-      lastName: ['required', 'string'],
-      email: ['required', 'string']
-    }
-  });
-
-  // Do a GET to create the collections from manager api...
-  await httpRequest('/foundcl', {
-    baseURL: 'http://localhost:8082',
-    headers: {
-      host: 'founddb.bitabase.test'
-    }
-  });
-
-  const promises = [];
-  const servers = [
-    'http://localhost:8000',
-    'http://localhost:8001'
-  ];
-
-  for (let i = 0; i < recordCount; i++) {
-    promises.push(
-      createRecord({
-        headers: session.asHeaders,
-        database: database,
-        collection: collection,
-        server: servers[i % 2],
-        data: {
-          firstName: `Joe${i}`,
-          lastName: `Bloggs${i}`,
-          email: `joe.bloggs${i}@example.com`
-        }
-      })
-    );
-  }
-
-  return Promise.all(promises);
-}
-
 test('[get] missing collection -> two database servers -> proxy to an existing collection containing 1 record with a filter', async t => {
-  t.plan(7);
+  t.plan(4);
 
-  await bringUp(2);
+  const mockServer = createMockServer(8000, function (request, response) {
+    const url = new URL(`http://localhost${request.url}`);
+
+    t.equal(url.searchParams.get('query'), '{"firstName":"Joe4"}');
+
+    writeResponse(200, {
+      count: 1,
+      items: [{
+        headerTest: 'yes'
+      }]
+    }, response);
+  });
+  const mockManager = createMockServer(8001, function (request, response) {
+    writeResponse(200, {}, response);
+  });
+
   const server = await createServer({
-    servers: [
-      'http://localhost:8000',
-      'http://localhost:8001'
-    ]
+    secret: 'test',
+    servers: ['http://0.0.0.0:8000'],
+    managers: ['http://0.0.0.0:8001']
   }).start();
-
-  await setupNewCollectionWithRecords(10);
 
   const query = querystring.stringify({
     query: JSON.stringify({
@@ -332,51 +338,67 @@ test('[get] missing collection -> two database servers -> proxy to an existing c
   });
 
   const response = await httpRequest(`/foundcl?${query}`, {
-    baseURL: 'http://localhost:8082',
+    baseURL: 'http://localhost:8002',
     headers: {
       host: 'founddb.bitabase.test'
     }
   });
 
+  mockServer.close();
+  mockManager.close();
   await promisify(server.stop)();
-  await bringDown();
 
   t.equal(response.status, 200, 'correct status code 200 returned');
 
   t.equal(response.data.count, 1, 'correct count returned');
   t.equal(response.data.items.length, 1, 'correct items returned');
-
-  t.ok(response.data.items[0].id, 'first item has id field');
-  t.equal(response.data.items[0].firstName, 'Joe4', 'first item firstName was Joe4');
-  t.equal(response.data.items[0].lastName, 'Bloggs4', 'first item firstName was Bloggs4');
-  t.equal(response.data.items[0].email, 'joe.bloggs4@example.com', 'first item email was joe.bloggs4@example.com');
 });
 
-test('[get] missing collection -> two database servers -> proxy to an existing collection containing 100 records with default pagination', async t => {
-  t.plan(3);
+test('[get] missing collection -> two database servers -> proxy to an existing collection containing 1 record with pagination', async t => {
+  t.plan(4);
 
-  await bringUp(2);
+  const mockServer = createMockServer(8000, function (request, response) {
+    const url = new URL(`http://localhost${request.url}`);
+
+    t.equal(url.searchParams.get('query'), '{"limit":25,"offset":50}');
+
+    writeResponse(200, {
+      count: 1,
+      items: [{
+        headerTest: 'yes'
+      }]
+    }, response);
+  });
+  const mockManager = createMockServer(8001, function (request, response) {
+    writeResponse(200, {}, response);
+  });
+
   const server = await createServer({
-    servers: [
-      'http://localhost:8000',
-      'http://localhost:8001'
-    ]
+    secret: 'test',
+    servers: ['http://0.0.0.0:8000'],
+    managers: ['http://0.0.0.0:8001']
   }).start();
 
-  await setupNewCollectionWithRecords(100);
+  const query = querystring.stringify({
+    query: JSON.stringify({
+      limit: 25,
+      offset: 50
+    })
+  });
 
-  const response = await httpRequest('/foundcl', {
-    baseURL: 'http://localhost:8082',
+  const response = await httpRequest(`/foundcl?${query}`, {
+    baseURL: 'http://localhost:8002',
     headers: {
       host: 'founddb.bitabase.test'
     }
   });
 
+  mockServer.close();
+  mockManager.close();
   await promisify(server.stop)();
-  await bringDown();
 
   t.equal(response.status, 200, 'correct status code 200 returned');
 
-  t.equal(response.data.count, 100, 'correct count returned');
-  t.equal(response.data.items.length, 10, 'correct items returned');
+  t.equal(response.data.count, 1, 'correct count returned');
+  t.equal(response.data.items.length, 1, 'correct items returned');
 });
