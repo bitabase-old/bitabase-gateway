@@ -13,11 +13,11 @@ async function setupServerSyncer (config, type) {
     return;
   }
 
-  const hostAddress = `http://${config.bindHost}:${config.bindPort}`;
+  const hostAddress = `http://${config.advertiseHost}:${config.bindPort}`;
 
   const dbConnection = await rqlite.connect(config.rqliteAddr, {
-    retries: 3,
-    retryDelay: 250,
+    retries: 10,
+    retryDelay: 3000,
     onRetry: () => console.log('Could not connect to: ' + config.dataServer + '. Trying again...')
   });
 
