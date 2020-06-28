@@ -68,7 +68,7 @@ function createServer (config = {}) {
 
     server.on('listening', function () {
       const address = server.address();
-      console.log(`[bitabase-manager] Listening on ${config.bindHost} (${address.address}:${address.port})`);
+      console.log(`[bitabase-gateway] Listening on ${config.bindHost} (${address.address}:${address.port})`);
     });
 
     server.listen(config.bindPort, config.bindHost);

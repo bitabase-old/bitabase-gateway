@@ -41,6 +41,12 @@ function postRecordToServer (config, server, databaseName, collectionName, body,
 
 const performPost = config => function (request, response, databaseName, collectionName, usageCollector) {
   const server = selectRandomItemFromArray(config.servers);
+
+  if (!server) {
+    console.log('No server nodes found');
+    return writeResponse(500, { error: 'Unexpected Server Error' }, response);
+  }
+
   const body = righto(parseJsonBody, request);
   const postedRecord = righto(postRecordToServer, config, server, databaseName, collectionName, body, true);
 

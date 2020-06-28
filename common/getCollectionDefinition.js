@@ -5,6 +5,10 @@ const ErrorObject = require('../modules/error');
 function getCollectionDefinition (config, databaseName, collectionName, callback) {
   const managerUrl = selectRandomItemFromArray(config.managers);
 
+  if (!managerUrl) {
+    return callback(new Error('no manager nodes exist'));
+  }
+
   callarest({
     url: `${managerUrl}/v1/databases/${databaseName}/collections/${collectionName}`,
     headers: {
