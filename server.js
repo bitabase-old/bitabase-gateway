@@ -33,7 +33,7 @@ function createServer (config = {}) {
   let server;
   function start () {
     server = http.createServer((request, response) => {
-      const databaseName = getDatabaseNameFromDomain(
+      const databaseName = request.headers['X-Bitabase-Database'] || getDatabaseNameFromDomain(
         config.accountMapper, request.headers.host
       );
 
