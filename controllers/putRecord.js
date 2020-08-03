@@ -19,7 +19,7 @@ function performPut (config) {
         return;
       }
 
-      usageCollector.tick(databaseName, collectionName, 'update', 1);
+      usageCollector.tick(databaseName, collectionName, 'put', 1);
 
       response.writeHead(result.response.statusCode);
       response.write(result.body);

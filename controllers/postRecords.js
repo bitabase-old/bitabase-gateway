@@ -56,7 +56,7 @@ const performPost = config => function (request, response, databaseName, collect
     }
 
     if (result.response.statusCode >= 200 && result.response.statusCode < 300) {
-      usageCollector.tick(databaseName, collectionName, 'write');
+      usageCollector.tick(databaseName, collectionName, 'post');
     }
     writeResponse(result.response.statusCode, result.body, response);
   });

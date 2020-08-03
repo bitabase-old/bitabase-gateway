@@ -19,7 +19,7 @@ function performDelete (config) {
         return;
       }
 
-      usageCollector.tick(databaseName, collectionName, 'update', 1);
+      usageCollector.tick(databaseName, collectionName, 'delete', 1);
 
       response.writeHead(result.response.statusCode);
       response.write(result.body);

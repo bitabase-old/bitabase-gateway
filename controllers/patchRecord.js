@@ -19,7 +19,7 @@ function performPatch (config) {
         return;
       }
 
-      usageCollector.tick(databaseName, collectionName, 'update', 1);
+      usageCollector.tick(databaseName, collectionName, 'patch', 1);
 
       response.writeHead(result.response.statusCode);
       response.write(result.body);
