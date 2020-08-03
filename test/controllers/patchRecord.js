@@ -8,7 +8,7 @@ const createMockServer = require('../helpers/createMockServer');
 
 const createServer = require('../../server');
 
-test('[post] missing collection -> missing db -> proxy to a none existing collection', async t => {
+test('[patch] missing collection -> missing db -> proxy to a none existing collection', async t => {
   t.plan(2);
 
   const mockServer = createMockServer(8000, function (request, response) {
@@ -25,7 +25,7 @@ test('[post] missing collection -> missing db -> proxy to a none existing collec
   }).start();
 
   const result = await httpRequest('/one', {
-    method: 'post',
+    method: 'PATCH',
     data: { a: 1 },
     baseURL: 'http://localhost:8002',
     headers: {
@@ -44,7 +44,7 @@ test('[post] missing collection -> missing db -> proxy to a none existing collec
   });
 });
 
-test('[post] missing collection -> existing db -> proxy to a none existing collection', async t => {
+test('[patch] missing collection -> existing db -> proxy to a none existing collection', async t => {
   t.plan(2);
 
   const mockServer = createMockServer(8000, function (request, response) {
@@ -61,7 +61,7 @@ test('[post] missing collection -> existing db -> proxy to a none existing colle
   }).start();
 
   const result = await httpRequest('/notfoundcollection', {
-    method: 'post',
+    method: 'PATCH',
     data: { a: 1 },
     baseURL: 'http://localhost:8002',
     headers: {
@@ -80,8 +80,8 @@ test('[post] missing collection -> existing db -> proxy to a none existing colle
   });
 });
 
-test('[post] missing collection -> proxy to an existing collection', async t => {
-  t.plan(5);
+test('[patch] missing collection -> proxy to an existing collection', async t => {
+  t.plan(3);
 
   const mockServer = createMockServer(8000, function (request, response) {
     finalStream(request, function (error, rawBody) {
@@ -89,7 +89,7 @@ test('[post] missing collection -> proxy to an existing collection', async t => 
         throw error;
       }
 
-      if (request.method === 'POST') {
+      if (request.method === 'PATCH') {
         let body;
         try {
           body = JSON.parse(rawBody);
@@ -103,7 +103,7 @@ test('[post] missing collection -> proxy to an existing collection', async t => 
         return;
       }
 
-      writeResponse(200, {}, response);
+      t.fail();
     });
   });
   const mockManager = createMockServer(8001, function (request, response) {
@@ -117,7 +117,7 @@ test('[post] missing collection -> proxy to an existing collection', async t => 
   }).start();
 
   const createResponse = await httpRequest('/foundcl', {
-    method: 'post',
+    method: 'PATCH',
     data: {
       firstName: 'Joe',
       lastName: 'Bloggs',
@@ -135,7 +135,5 @@ test('[post] missing collection -> proxy to an existing collection', async t => 
 
   t.equal(createResponse.status, 201);
   t.equal(createResponse.data.firstName, 'Joe');
-  t.equal(createResponse.data.lastName, 'Bloggs');
-  t.equal(createResponse.data.email, 'joe.bloggs@example.com');
   t.ok(createResponse.data.id);
 });

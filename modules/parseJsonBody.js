@@ -1,6 +1,11 @@
+const { promisify } = require('util');
 const { ErrorObject } = require('./error');
 
-function parseBody (request, callback) {
+function parseJsonBody (request, callback) {
+  if (!callback) {
+    return promisify(parseJsonBody)(request);
+  }
+
   let body = [];
 
   request
@@ -26,4 +31,4 @@ function parseBody (request, callback) {
     });
 }
 
-module.exports = parseBody;
+module.exports = parseJsonBody;

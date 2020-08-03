@@ -23,6 +23,9 @@ function createServer (config = {}) {
   const getRecord = require('./controllers/getRecord.js')(config);
   const getRecords = require('./controllers/getRecords.js')(config);
   const postRecords = require('./controllers/postRecords.js')(config);
+  const putRecord = require('./controllers/putRecord.js')(config);
+  const patchRecord = require('./controllers/patchRecord.js')(config);
+  const deleteRecord = require('./controllers/deleteRecord.js')(config);
 
   const usageCollector = setupUsageCollector(config);
   const serverSyncer = setupServerSyncer(config, 'gateway');
@@ -61,6 +64,18 @@ function createServer (config = {}) {
 
       if (request.method === 'POST') {
         return postRecords(request, response, databaseName, collectionName, usageCollector.usageCollector);
+      }
+
+      if (request.method === 'PUT') {
+        return putRecord(request, response, databaseName, collectionName, usageCollector.usageCollector);
+      }
+
+      if (request.method === 'PATCH') {
+        return patchRecord(request, response, databaseName, collectionName, usageCollector.usageCollector);
+      }
+
+      if (request.method === 'DELETE') {
+        return deleteRecord(request, response, databaseName, collectionName, usageCollector.usageCollector);
       }
 
       sendJsonResponse(404, { error: 'not found' }, response);

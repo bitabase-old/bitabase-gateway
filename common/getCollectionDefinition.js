@@ -1,8 +1,14 @@
+const { promisify } = require('util');
+
 const callarest = require('callarest');
 const selectRandomItemFromArray = require('../modules/selectRandomItemFromArray');
 const ErrorObject = require('../modules/error');
 
 function getCollectionDefinition (config, databaseName, collectionName, callback) {
+  if (!callback) {
+    return promisify(getCollectionDefinition)(config, databaseName, collectionName);
+  }
+
   const managerUrl = selectRandomItemFromArray(config.managers);
 
   if (!managerUrl) {
