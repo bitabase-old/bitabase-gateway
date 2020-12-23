@@ -11,7 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "async-bugs": "^1.1.1",
-    "axios": "^0.19.2",
+    "axios": "^0.21.1",
     "callarest": "^2.0.2",
     "chalk": "^4.1.0",
     "error-with-object": "^1.1.0",
